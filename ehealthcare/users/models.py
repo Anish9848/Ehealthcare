@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings
+import os
 
 
 class CustomUser(AbstractUser):
@@ -9,8 +10,17 @@ class CustomUser(AbstractUser):
         ('patient', 'Patient'),
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
-    phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True)  # New field
-    
+    phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True)
+
+# Function to generate file path for patient reports
+def patient_report_upload_path(instance, filename):
+    # Create a folder named after the patient's username
+    return os.path.join('patient_reports', instance.patient.username, filename)
+
+# Function to generate file path for doctor reports
+def doctor_report_upload_path(instance, filename):
+    # Create a folder named after the doctor's username
+    return os.path.join('doctor_reports', instance.doctor.username, filename)
 
 class PatientReport(models.Model):
     REPORT_TYPE_CHOICES = [
@@ -19,10 +29,10 @@ class PatientReport(models.Model):
         ('other', 'Other Report'),
     ]
     patient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    file = models.FileField(upload_to='patient_reports/')
+    file = models.FileField(upload_to=patient_report_upload_path)  # Use the custom path
     report_type = models.CharField(max_length=20, choices=REPORT_TYPE_CHOICES, default='other')
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    
+
 class DoctorReport(models.Model):
     REPORT_TYPE_CHOICES = [
         ('video', 'Video Consultation'),
@@ -30,6 +40,6 @@ class DoctorReport(models.Model):
         ('other', 'Other Report'),
     ]
     doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    file = models.FileField(upload_to='doctor_reports/')
+    file = models.FileField(upload_to=doctor_report_upload_path)  # Use the custom path
     report_type = models.CharField(max_length=20, choices=REPORT_TYPE_CHOICES, default='other')
     uploaded_at = models.DateTimeField(auto_now_add=True)
