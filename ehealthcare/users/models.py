@@ -43,3 +43,20 @@ class DoctorReport(models.Model):
     file = models.FileField(upload_to=doctor_report_upload_path)  # Use the custom path
     report_type = models.CharField(max_length=20, choices=REPORT_TYPE_CHOICES, default='other')
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+class Appointment(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    patient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="appointments")
+    doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="appointments_as_doctor")
+    date = models.DateField()
+    time = models.TimeField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Appointment with Dr. {self.doctor.username} on {self.date} at {self.time}"

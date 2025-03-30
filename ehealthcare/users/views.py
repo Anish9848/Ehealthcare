@@ -8,7 +8,7 @@ from .models import CustomUser, PatientReport  # Import both models
 from django.core.files.storage import FileSystemStorage
 from .forms import PatientReportForm
 from django.http import JsonResponse
-from .models import CustomUser, PatientReport, DoctorReport
+from .models import CustomUser, PatientReport, DoctorReport, Appointment
 
 # Login view
 def login_view(request):
@@ -290,3 +290,31 @@ def delete_doctor_report(request, report_id):
         return JsonResponse({"success": "Report deleted successfully!"})
     except DoctorReport.DoesNotExist:
         return JsonResponse({"error": "Report not found or unauthorized access"}, status=404)
+
+@login_required
+def patient_appointment_view(request):
+    if request.user.role != "patient":
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect("home")
+
+    if request.method == "POST":
+        doctor_id = request.POST.get("doctor_id")
+        date = request.POST.get("date")
+        time = request.POST.get("time")
+
+        try:
+            doctor = CustomUser.objects.get(id=doctor_id, role="doctor")
+            Appointment.objects.create(
+                patient=request.user,
+                doctor=doctor,
+                date=date,
+                time=time,
+            )
+            messages.success(request, "Appointment request sent successfully!")
+        except CustomUser.DoesNotExist:
+            messages.error(request, "Invalid doctor selected.")
+
+    # Fetch all registered doctors for the dropdown
+    doctors = CustomUser.objects.filter(role="doctor")
+
+    return render(request, "users/patient_appointment.html", {"doctors": doctors})

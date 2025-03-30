@@ -18,4 +18,5 @@ urlpatterns = [
     path("doctor/reports/", views.doctor_medical_reports_view, name="doctor_medical_reports"),
     path("doctor/reports/fetch/", views.fetch_doctor_reports, name="fetch_doctor_reports"),
     path("doctor/reports/delete/<int:report_id>/", views.delete_doctor_report, name="delete_doctor_report"),
+    path("patient/appointments/", views.patient_appointment_view, name="patient_appointment"),
 ]
