@@ -22,3 +22,14 @@ class PatientReport(models.Model):
     file = models.FileField(upload_to='patient_reports/')
     report_type = models.CharField(max_length=20, choices=REPORT_TYPE_CHOICES, default='other')
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+class DoctorReport(models.Model):
+    REPORT_TYPE_CHOICES = [
+        ('video', 'Video Consultation'),
+        ('lab', 'Lab Report'),
+        ('other', 'Other Report'),
+    ]
+    doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    file = models.FileField(upload_to='doctor_reports/')
+    report_type = models.CharField(max_length=20, choices=REPORT_TYPE_CHOICES, default='other')
+    uploaded_at = models.DateTimeField(auto_now_add=True)

@@ -8,6 +8,7 @@ from .models import CustomUser, PatientReport  # Import both models
 from django.core.files.storage import FileSystemStorage
 from .forms import PatientReportForm
 from django.http import JsonResponse
+from .models import CustomUser, PatientReport, DoctorReport
 
 # Login view
 def login_view(request):
@@ -225,4 +226,44 @@ def delete_report(request, report_id):
     except PatientReport.DoesNotExist:
         logger.warning(f"Attempt to delete non-existent or unauthorized report with ID {report_id} by user {request.user.username}")
         return JsonResponse({"error": "Report not found or unauthorized access"}, status=404)
-    
+
+@login_required
+def doctor_medical_reports_view(request):
+    if request.user.role != "doctor":
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect("doctor_home")
+    return render(request, "users/doctor_medical_reports.html")
+
+@login_required
+def doctor_medical_reports_view(request):
+    if request.user.role != "doctor":
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect("doctor_home")
+
+    if request.method == "POST":
+        report_type = request.POST.get("report_type", "other")
+        files = request.FILES.getlist("files")
+
+        if not files:
+            messages.error(request, "No files selected for upload.")
+            return redirect("doctor_medical_reports")
+
+        for file in files:
+            DoctorReport.objects.create(
+                doctor=request.user,
+                file=file,
+                report_type=report_type,
+            )
+
+        messages.success(request, f"{len(files)} {report_type.capitalize()} report(s) uploaded successfully!")
+        return redirect("doctor_medical_reports")
+
+    reports = {
+        "video": DoctorReport.objects.filter(doctor=request.user, report_type="video"),
+        "lab": DoctorReport.objects.filter(doctor=request.user, report_type="lab"),
+        "other": DoctorReport.objects.filter(doctor=request.user, report_type="other"),
+    }
+
+    return render(request, "users/doctor_medical_reports.html", {"reports": reports})
+
+
