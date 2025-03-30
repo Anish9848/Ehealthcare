@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Home</title>
+</head>
+<body>
+    <h1>Welcome, Admin {{ user.username }}!</h1>
+    <p>This is your admin dashboard. Here you can:</p>
+    <ul>
+        <li><a href="/admin/manage/doctors/">Manage Doctors</a></li>
+        <li><a href="/admin/manage/patients/">Manage Patients</a></li>
+        <li><a href="/admin/reports/">View System Reports</a></li>
+    </ul>
+    <a href="/logout/">Logout</a>
+</body>
+</html>
