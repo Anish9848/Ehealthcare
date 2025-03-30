@@ -16,4 +16,6 @@ urlpatterns = [
     path("patient/reports/all/", views.view_all_reports, name="view_all_reports"),
     path("patient/reports/delete/<int:report_id>/", views.delete_report, name="delete_report"),
     path("doctor/reports/", views.doctor_medical_reports_view, name="doctor_medical_reports"),
+    path("doctor/reports/fetch/", views.fetch_doctor_reports, name="fetch_doctor_reports"),
+    path("doctor/reports/delete/<int:report_id>/", views.delete_doctor_report, name="delete_doctor_report"),
 ]

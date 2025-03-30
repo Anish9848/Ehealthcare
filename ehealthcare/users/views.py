@@ -267,3 +267,26 @@ def doctor_medical_reports_view(request):
     return render(request, "users/doctor_medical_reports.html", {"reports": reports})
 
 
+@login_required
+def fetch_doctor_reports(request):
+    if request.user.role != "doctor":
+        return JsonResponse({"error": "Unauthorized access"}, status=403)
+
+    # Fetch all reports for the logged-in doctor, grouped by report type
+    reports = {
+        "video": list(DoctorReport.objects.filter(doctor=request.user, report_type="video").values("id", "file", "uploaded_at")),
+        "lab": list(DoctorReport.objects.filter(doctor=request.user, report_type="lab").values("id", "file", "uploaded_at")),
+        "other": list(DoctorReport.objects.filter(doctor=request.user, report_type="other").values("id", "file", "uploaded_at")),
+    }
+    return JsonResponse(reports)
+@login_required
+def delete_doctor_report(request, report_id):
+    if request.user.role != "doctor":
+        return JsonResponse({"error": "Unauthorized access"}, status=403)
+
+    try:
+        report = DoctorReport.objects.get(id=report_id, doctor=request.user)
+        report.delete()
+        return JsonResponse({"success": "Report deleted successfully!"})
+    except DoctorReport.DoesNotExist:
+        return JsonResponse({"error": "Report not found or unauthorized access"}, status=404)

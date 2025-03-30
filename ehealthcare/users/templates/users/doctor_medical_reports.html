@@ -30,7 +30,7 @@
 
         // Function to fetch and display all reports in a modal
         function fetchAndShowReports() {
-            fetch("{% url 'doctor_medical_reports' %}")
+            fetch("{% url 'fetch_doctor_reports' %}")
                 .then(response => response.json())
                 .then(data => {
                     const container = document.getElementById("reportsContainer");
@@ -84,7 +84,6 @@
 
         // Function to open the delete confirmation modal
         function openDeleteModal(reportId) {
-            console.log("Report ID to delete:", reportId); // Debugging log
             reportToDelete = reportId; // Store the report ID
             const deleteModal = new bootstrap.Modal(document.getElementById("deleteModal"));
             deleteModal.show();
@@ -93,8 +92,6 @@
         // Function to delete a report
         function deleteReport() {
             if (!reportToDelete) return;
-
-            console.log("Deleting report with ID:", reportToDelete); // Debugging log
 
             fetch(`/doctor/reports/delete/${reportToDelete}/`, {
                 method: "DELETE",
