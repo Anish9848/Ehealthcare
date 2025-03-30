@@ -19,4 +19,6 @@ urlpatterns = [
     path("doctor/reports/fetch/", views.fetch_doctor_reports, name="fetch_doctor_reports"),
     path("doctor/reports/delete/<int:report_id>/", views.delete_doctor_report, name="delete_doctor_report"),
     path("patient/appointments/", views.patient_appointment_view, name="patient_appointment"),
+    path("doctor/appointments/", views.doctor_appointment_view, name="doctor_appointment"),
+    path("doctor/appointments/start-meeting/<int:appointment_id>/", views.start_meeting, name="start_meeting"),
 ]

@@ -318,3 +318,34 @@ def patient_appointment_view(request):
     doctors = CustomUser.objects.filter(role="doctor")
 
     return render(request, "users/patient_appointment.html", {"doctors": doctors})
+
+@login_required
+def doctor_appointment_view(request):
+    if request.user.role != "doctor":
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect("home")
+
+    # Fetch all appointments for the logged-in doctor
+    appointments = Appointment.objects.filter(doctor=request.user).order_by("date", "time")
+
+    return render(request, "users/doctor_appointment.html", {"appointments": appointments})
+
+@login_required
+def start_meeting(request, appointment_id):
+    if request.user.role != "doctor":
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect("doctor_home")
+
+    try:
+        appointment = Appointment.objects.get(id=appointment_id, doctor=request.user)
+        if appointment.status == "pending":
+            # Update the appointment status to "approved" or handle meeting logic
+            appointment.status = "approved"
+            appointment.save()
+            messages.success(request, f"Meeting started for appointment with {appointment.patient.username}.")
+        else:
+            messages.error(request, "This appointment is not in a pending state.")
+    except Appointment.DoesNotExist:
+        messages.error(request, "Appointment not found.")
+
+    return redirect("doctor_appointment")
