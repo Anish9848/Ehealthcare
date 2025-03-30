@@ -15,5 +15,4 @@ urlpatterns = [
     path("patient/reports/upload/other/", views.upload_patient_report_view, name="upload_patient_report"),
     path("patient/reports/all/", views.view_all_reports, name="view_all_reports"),
     path("patient/reports/delete/<int:report_id>/", views.delete_report, name="delete_report"),
-    path("doctor/reports/", views.doctor_medical_reports_view, name="doctor_medical_reports"),
 ]

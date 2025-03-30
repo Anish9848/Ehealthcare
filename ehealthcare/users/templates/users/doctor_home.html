@@ -1,4 +1,3 @@
-<!-- filepath: c:\Users\Anish\Desktop\Final Year Project\ehealthcare\users\templates\users\doctor_home.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,7 +21,7 @@
                         <a class="nav-link" href="{% url 'doctor_home' %}">Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'doctor_medical_report' %}">Medical Reports</a>
+                        <a class="nav-link" href="#">Medical Reports</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-danger" href="{% url 'logout' %}">Logout</a>
@@ -37,8 +36,8 @@
         <h1>Welcome, Dr. {{ user.username }}!</h1>
         <p>This is your doctor dashboard. Here you can:</p>
         <ul>
-            <li><a href="{% url 'doctor_medical_report' %}">View Patient Medical Reports</a></li>
-            <li><a href="{% url 'doctor_home' %}">View and Manage Appointments</a></li>
+            <li><a href="#">View Patient Medical Reports</a></li>
+            <li><a href="#">Manage Appointments</a></li>
         </ul>
     </div>
 </body>

@@ -226,9 +226,3 @@ def delete_report(request, report_id):
         logger.warning(f"Attempt to delete non-existent or unauthorized report with ID {report_id} by user {request.user.username}")
         return JsonResponse({"error": "Report not found or unauthorized access"}, status=404)
     
-@login_required
-def doctor_medical_reports_view(request):
-    if request.user.role != "doctor":
-        messages.error(request, "You do not have permission to access this page.")
-        return redirect("doctor_home")
-    return render(request, "users/doctor_medical_report.html")
