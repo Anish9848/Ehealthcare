@@ -51,8 +51,11 @@ def patient_home_view(request):
     if request.user.role != "patient":
         messages.error(request, "You do not have permission to access this page.")
         return redirect("home")
-    return render(request, "users/patient_home.html")
 
+    # Fetch approved appointments for the logged-in patient
+    appointments = Appointment.objects.filter(patient=request.user, status="approved").order_by("date", "time")
+
+    return render(request, "users/patient_home.html", {"appointments": appointments})
 
 # Admin home view
 @login_required
@@ -349,3 +352,32 @@ def start_meeting(request, appointment_id):
         messages.error(request, "Appointment not found.")
 
     return redirect("doctor_appointment")
+
+@login_required
+def schedule_meeting(request):
+    if request.user.role != "doctor":
+        return JsonResponse({"error": "Unauthorized access"}, status=403)
+
+    if request.method == "POST":
+        meeting_date = request.POST.get("meeting_date")
+        meeting_time = request.POST.get("meeting_time")
+        meeting_title = request.POST.get("meeting_title")
+        is_recurring = request.POST.get("is_recurring") == "true"
+
+        # Logic to save the meeting details
+        # Example: Save to the database or update an appointment
+        # You can customize this logic based on your requirements
+
+        return JsonResponse({"success": "Meeting scheduled successfully!"})
+    return JsonResponse({"error": "Invalid request method"}, status=400)
+
+@login_required
+def doctor_appointment_view(request):
+    if request.user.role != "doctor":
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect("home")
+
+    # Fetch all appointments for the logged-in doctor
+    appointments = Appointment.objects.filter(doctor=request.user).order_by("date", "time")
+
+    return render(request, "users/doctor_appointment.html", {"appointments": appointments})

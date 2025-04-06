@@ -107,7 +107,7 @@
         <!-- Action Buttons -->
         <div class="action-buttons">
             <button class="btn btn-primary">Meet Now</button>
-            <button class="btn btn-secondary">Schedule a Meeting</button>
+            <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#scheduleMeetingModal">Schedule a Meeting</button>
             <button class="btn btn-success">Chat</button>
             <button class="btn btn-warning">Notification</button>
         </div>
@@ -133,9 +133,11 @@
                                 <span class="badge {% if appointment.status == 'approved' %}bg-success{% elif appointment.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
                                     {{ appointment.status|title }}
                                 </span>
-                                {% if appointment.status == 'pending' %}
-                                    <button class="btn btn-primary btn-sm ms-2" onclick="startMeeting('{{ appointment.id }}')">Approve Appointment
-                                    </button>
+                                {% if appointment.status == 'approved' %}
+                                    <p class="text-muted">Scheduled Meeting: {{ appointment.meeting_title }} on {{ appointment.date }} at {{ appointment.time }}</p>
+                                    <button class="btn btn-primary btn-sm ms-2" onclick="startMeeting('{{ appointment.id }}')">Start Meeting</button>
+                                {% elif appointment.status == 'pending' %}
+                                    <button class="btn btn-secondary btn-sm ms-2" onclick="approveAppointment('{{ appointment.id }}')">Approve Appointment</button>
                                 {% endif %}
                             </td>
                         </tr>
@@ -149,11 +151,72 @@
         </div>
     </div>
 
+    <!-- Modal for Scheduling a Meeting -->
+    <div class="modal fade" id="scheduleMeetingModal" tabindex="-1" aria-labelledby="scheduleMeetingModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scheduleMeetingModalLabel">Schedule a Meeting</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="scheduleMeetingForm">
+                        <div class="mb-3">
+                            <label for="meetingDate" class="form-label">Meeting Date</label>
+                            <input type="date" class="form-control" id="meetingDate" name="meeting_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="meetingTime" class="form-label">Meeting Time</label>
+                            <input type="time" class="form-control" id="meetingTime" name="meeting_time" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="meetingTitle" class="form-label">Meeting Title</label>
+                            <input type="text" class="form-control" id="meetingTitle" name="meeting_title" placeholder="Enter meeting title" required>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isRecurring" name="is_recurring">
+                            <label class="form-check-label" for="isRecurring">Recurring Meeting</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="submitScheduleMeeting()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         function startMeeting(appointmentId) {
-            // Redirect to a meeting page or initiate a meeting
             const meetingUrl = `/doctor/appointments/start-meeting/${appointmentId}/`;
             window.location.href = meetingUrl;
+        }
+
+        function submitScheduleMeeting() {
+            const form = document.getElementById("scheduleMeetingForm");
+            const formData = new FormData(form);
+
+            fetch("{% url 'schedule_meeting' %}", {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.success);
+                    location.reload();
+                } else {
+                    alert(data.error || "Failed to schedule the meeting.");
+                }
+            })
+            .catch(error => {
+                console.error("Error scheduling meeting:", error);
+                alert("An error occurred. Please try again.");
+            });
         }
     </script>
 </body>
