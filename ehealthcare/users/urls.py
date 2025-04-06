@@ -22,4 +22,5 @@ urlpatterns = [
     path("doctor/appointments/", views.doctor_appointment_view, name="doctor_appointment"),
     path("doctor/appointments/start-meeting/<int:appointment_id>/", views.start_meeting, name="start_meeting"),
     path("doctor/appointments/schedule-meeting/", views.schedule_meeting, name="schedule_meeting"),
+    path("video-conference/<str:room_name>/", views.video_conference_view, name="video_conference"),
 ]

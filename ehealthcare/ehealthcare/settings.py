@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "users",
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -70,6 +71,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "ehealthcare.wsgi.application"
+ASGI_APPLICATION = "ehealthcare.asgi.application"
+
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
@@ -140,3 +143,12 @@ LOGIN_URL = "/login/"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],  # Ensure Redis is running
+        },
+    },
+}

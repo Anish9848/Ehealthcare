@@ -218,6 +218,12 @@
                 alert("An error occurred. Please try again.");
             });
         }
+        
+        function startMeeting(appointmentId) {
+            const roomName = `room-${appointmentId}`; // Generate a unique room name
+            const meetingUrl = `/video-conference/${roomName}/`;
+            window.location.href = meetingUrl;
+        }
     </script>
 </body>
 </html>

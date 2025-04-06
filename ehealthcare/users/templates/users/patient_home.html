@@ -73,7 +73,8 @@
 
     <script>
         function joinMeeting(appointmentId) {
-            const meetingUrl = `/patient/appointments/join-meeting/${appointmentId}/`;
+            const roomName = `room-${appointmentId}`; // Use the same room name as the doctor
+            const meetingUrl = `/video-conference/${roomName}/`;
             window.location.href = meetingUrl;
         }
     </script>

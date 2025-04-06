@@ -381,3 +381,7 @@ def doctor_appointment_view(request):
     appointments = Appointment.objects.filter(doctor=request.user).order_by("date", "time")
 
     return render(request, "users/doctor_appointment.html", {"appointments": appointments})
+
+@login_required
+def video_conference_view(request, room_name):
+    return render(request, "users/video_conference.html", {"room_name": room_name, "username": request.user.username})
