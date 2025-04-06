@@ -342,10 +342,10 @@ def start_meeting(request, appointment_id):
     try:
         appointment = Appointment.objects.get(id=appointment_id, doctor=request.user)
         if appointment.status == "pending":
-            # Update the appointment status to "approved" or handle meeting logic
             appointment.status = "approved"
             appointment.save()
-            messages.success(request, f"Meeting started for appointment with {appointment.patient.username}.")
+            room_name = f"room-{appointment_id}"  # Ensure this matches the frontend
+            return redirect("video_conference", room_name=room_name)
         else:
             messages.error(request, "This appointment is not in a pending state.")
     except Appointment.DoesNotExist:
@@ -384,4 +384,10 @@ def doctor_appointment_view(request):
 
 @login_required
 def video_conference_view(request, room_name):
-    return render(request, "users/video_conference.html", {"room_name": room_name, "username": request.user.username})
+    is_moderator = request.user.role == "doctor"  # Doctors are moderators
+    print(f"User: {request.user.username}, Role: {request.user.role}, Is Moderator: {is_moderator}")
+    return render(request, "users/video_conference.html", {
+        "room_name": room_name,
+        "username": request.user.username,
+        "is_moderator": is_moderator,
+    })

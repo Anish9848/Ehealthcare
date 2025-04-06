@@ -63,45 +63,65 @@
         </div>
     </div>
 
-    <script>
-        // Jitsi Meet Integration
-        const roomName = "{{ room_name }}";
-        const userName = "{{ username }}";
+    <!-- filepath: c:\Users\Anish\Desktop\Final Year Project\ehealthcare\users\templates\users\video_conference.html -->
+<script>
+    const roomName = "{{ room_name }}";
+    const userName = "{{ username }}";
+    const isModerator = "{{ is_moderator }}" === "True"; // Pass this from the backend
+    console.log(isModerator);
 
-        const domain = "meet.jit.si";
-        const options = {
-            roomName: roomName,
-            width: "100%",
-            height: "100%",
-            parentNode: document.querySelector("#video-container"),
-            userInfo: {
-                displayName: userName,
-            },
-        };
+    const domain = "meet.jit.si";
+    const options = {
+        roomName: roomName,
+        width: "100%",
+        height: "100%",
+        parentNode: document.querySelector("#video-container"),
+        userInfo: {
+            displayName: userName,
+        },
+        configOverwrite: {
+            prejoinPageEnabled: true, // Enable waiting room
+            startWithAudioMuted: true,
+            startWithVideoMuted: true,
+        },
+        interfaceConfigOverwrite: {
+            TOOLBAR_BUTTONS: [
+                "microphone", "camera", "chat", "raisehand", "tileview", "fullscreen", "hangup",
+            ],
+        },
+    };
 
-        const api = new JitsiMeetExternalAPI(domain, options);
+    const api = new JitsiMeetExternalAPI(domain, options);
 
-        // Chat Integration
-        const chatMessages = document.getElementById("chat-messages");
-        const chatInput = document.getElementById("chat-message");
-
-        const ws = new WebSocket(`ws://${window.location.host}/ws/video-conference/${roomName}/`);
-
-        ws.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            const messageElement = document.createElement("div");
-            messageElement.textContent = `${data.username}: ${data.message}`;
-            chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to the bottom
-        };
-
-        function sendMessage() {
-            const message = chatInput.value;
-            if (message.trim() !== "") {
-                ws.send(JSON.stringify({ username: userName, message: message }));
-                chatInput.value = "";
-            }
+    // Add the moderator indicator logic here
+    api.addEventListener("videoConferenceJoined", () => {
+        if (isModerator) {
+            api.executeCommand("password", "secureRoom123"); // Optional: Set a room password
+            document.getElementById("moderator-indicator").style.display = "block";
         }
-    </script>
+    });
+
+    // Chat Integration
+    const chatMessages = document.getElementById("chat-messages");
+    const chatInput = document.getElementById("chat-message");
+
+    const ws = new WebSocket(`ws://${window.location.host}/ws/video-conference/${roomName}/`);
+
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        const messageElement = document.createElement("div");
+        messageElement.textContent = `${data.username}: ${data.message}`;
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to the bottom
+    };
+
+    function sendMessage() {
+        const message = chatInput.value;
+        if (message.trim() !== "") {
+            ws.send(JSON.stringify({ username: userName, message: message }));
+            chatInput.value = "";
+        }
+    }
+</script>
 </body>
 </html>
