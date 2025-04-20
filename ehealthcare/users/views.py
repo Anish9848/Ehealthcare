@@ -384,10 +384,7 @@ def doctor_appointment_view(request):
 
 @login_required
 def video_conference_view(request, room_name):
-    is_moderator = request.user.role == "doctor"  # Doctors are moderators
-    print(f"User: {request.user.username}, Role: {request.user.role}, Is Moderator: {is_moderator}")
     return render(request, "users/video_conference.html", {
         "room_name": room_name,
         "username": request.user.username,
-        "is_moderator": is_moderator,
     })
