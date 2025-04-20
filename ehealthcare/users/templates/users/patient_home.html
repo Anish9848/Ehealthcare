@@ -4,13 +4,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Home</title>
+    <title>Patient Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            background-color: #228B22; /* Dark green color */
+        }
+        .navbar .navbar-brand {
+            color: black !important; /* Navbar heading in black */
+            font-weight: bold;
+        }
+        .navbar .nav-link {
+            color: black !important; /* Default color for all links */
+        }
+        .navbar .nav-link:hover {
+            color: #004d40 !important; /* Darker green for hover effect */
+        }
+        .navbar .nav-link.text-danger {
+            color: red !important; /* Logout link in red */
+        }
+        .navbar .nav-link.text-danger:hover {
+            color: darkred !important; /* Darker red for hover effect */
+        }
+        .dashboard-header {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .chart-container {
+            width: 90%;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .chart-title {
+            text-align: center;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #343a40;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin: 20px auto;
+            width: 90%;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            width: 200px;
+            margin: 10px;
+        }
+        .stat-card h3 {
+            font-size: 1.8rem;
+            margin: 10px 0;
+            color: #28a745; /* Green color for stats */
+        }
+        .stat-card p {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        canvas {
+            max-height: 300px;
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">E-Healthcare</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,65 +89,133 @@
             </button>
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/patient/reports/">Medical Reports</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'patient_appointment' %}">Appointments</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-danger" href="/logout/">Logout</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'patient_home' %}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'patient_medical_reports' %}">Medical Reports</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'patient_appointment' %}">Appointments</a></li>
+                    <li class="nav-item"><a class="nav-link text-danger" href="{% url 'logout' %}">Logout</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="container mt-4">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
         <h1>Welcome, {{ user.username }}!</h1>
-        <p>This is your patient dashboard. Here you can:</p>
-        <ul>
-            <li><a href="/patient/appointments/">View or Book Appointments</a></li>
-            <li><a href="/patient/reports/">View Medical Reports</a></li>
-        </ul>
+        <p>Here is an overview of your appointments and reports:</p>
+    </div>
 
-        <!-- Scheduled Meetings Section -->
-        <h3 class="mt-5">Scheduled Meetings</h3>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Doctor</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for appointment in appointments %}
-                    <tr>
-                        <td>Dr. {{ appointment.doctor.username }}</td>
-                        <td>{{ appointment.date }}</td>
-                        <td>{{ appointment.time }}</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm" onclick="joinMeeting('{{ appointment.id }}')">Join Meeting</button>
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center">No scheduled meetings found.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Statistics Section -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>{{ total_appointments }}</h3>
+            <p>Total Appointments</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ upcoming_appointments }}</h3>
+            <p>Upcoming Appointments</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ total_reports }}</h3>
+            <p>Total Reports</p>
+        </div>
+    </div>
+
+    <!-- Line Chart -->
+    <div class="chart-container">
+        <div class="chart-title">Appointments Over Time</div>
+        <canvas id="lineChart"></canvas>
+    </div>
+
+    <!-- Pie Chart -->
+    <div class="chart-container">
+        <div class="chart-title">Appointment Status Distribution</div>
+        <canvas id="pieChart"></canvas>
     </div>
 
     <script>
-        function joinMeeting(appointmentId) {
-            const roomName = `room-${appointmentId}`; // Use the same room name as the doctor
-            const meetingUrl = `/video-conference/${roomName}/`;
-            window.location.href = meetingUrl;
-        }
+        // Data from the backend
+        const monthlyAppointments = {{ monthly_appointments_data|safe }}; // Example: [5, 10, 15, ...]
+        const appointmentStatusData = {{ appointment_status_data|safe }}; // Example: [10, 5, 2]
+
+        // Line Chart for Appointments Over Time
+        const lineCtx = document.getElementById('lineChart').getContext('2d');
+        new Chart(lineCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], // Months
+                datasets: [
+                    {
+                        label: 'Appointments',
+                        data: monthlyAppointments,
+                        borderColor: '#4caf50', // Green
+                        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Appointments'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Months'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.raw || 0;
+                                return `${label}: ${value}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Pie Chart for Appointment Status Distribution
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Completed', 'Upcoming', 'Cancelled'],
+                datasets: [{
+                    data: appointmentStatusData,
+                    backgroundColor: ['#4caf50', '#2196f3', '#ff9800'], // Green, Blue, Orange
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                return `${label}: ${value}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>

@@ -37,25 +37,88 @@ def logout_view(request):
 
 
 # Doctor home view
+from django.db.models.functions import TruncMonth
+from django.db.models import Count
+from datetime import datetime
+
 @login_required
 def doctor_home_view(request):
     if request.user.role != "doctor":
         messages.error(request, "You do not have permission to access this page.")
         return redirect("home")
-    return render(request, "users/doctor_home.html")
 
+    # Fetch appointment data
+    conducted_meetings = Appointment.objects.filter(doctor=request.user, status="conducted").count()
+    scheduled_meetings = Appointment.objects.filter(doctor=request.user, status="approved").count()
+    pending_meetings = Appointment.objects.filter(doctor=request.user, status="pending").count()
 
-# Patient home view
+    # Monthly data for line graph
+    current_year = datetime.now().year
+    monthly_data = Appointment.objects.filter(doctor=request.user, date__year=current_year).annotate(
+        month=TruncMonth('date')
+    ).values('month', 'status').annotate(count=Count('id'))
+
+    # Initialize data for each month
+    conducted_meetings_data = [0] * 12
+    scheduled_meetings_data = [0] * 12
+    pending_meetings_data = [0] * 12
+
+    # Populate monthly data
+    for entry in monthly_data:
+        month_index = entry['month'].month - 1  # Convert month to 0-based index
+        if entry['status'] == "conducted":
+            conducted_meetings_data[month_index] = entry['count']
+        elif entry['status'] == "approved":
+            scheduled_meetings_data[month_index] = entry['count']
+        elif entry['status'] == "pending":
+            pending_meetings_data[month_index] = entry['count']
+
+    context = {
+        "conducted_meetings": conducted_meetings,
+        "scheduled_meetings": scheduled_meetings,
+        "pending_meetings": pending_meetings,
+        "conducted_meetings_data": conducted_meetings_data,
+        "scheduled_meetings_data": scheduled_meetings_data,
+        "pending_meetings_data": pending_meetings_data,
+    }
+    return render(request, "users/doctor_home.html", context)
+
 @login_required
 def patient_home_view(request):
     if request.user.role != "patient":
         messages.error(request, "You do not have permission to access this page.")
         return redirect("home")
 
-    # Fetch approved appointments for the logged-in patient
-    appointments = Appointment.objects.filter(patient=request.user, status="approved").order_by("date", "time")
+    # Fetch appointment data
+    total_appointments = Appointment.objects.filter(patient=request.user).count()
+    upcoming_appointments = Appointment.objects.filter(patient=request.user, status="approved").count()
+    total_reports = PatientReport.objects.filter(patient=request.user).count()
 
-    return render(request, "users/patient_home.html", {"appointments": appointments})
+    # Monthly data for line graph
+    current_year = datetime.now().year
+    monthly_appointments = Appointment.objects.filter(patient=request.user, date__year=current_year).annotate(
+        month=TruncMonth('date')
+    ).values('month').annotate(count=Count('id'))
+
+    # Initialize data for each month
+    monthly_appointments_data = [0] * 12
+    for entry in monthly_appointments:
+        month_index = entry['month'].month - 1  # Convert month to 0-based index
+        monthly_appointments_data[month_index] = entry['count']
+
+    # Appointment status data for pie chart
+    completed_appointments = Appointment.objects.filter(patient=request.user, status="completed").count()
+    cancelled_appointments = Appointment.objects.filter(patient=request.user, status="cancelled").count()
+    appointment_status_data = [completed_appointments, upcoming_appointments, cancelled_appointments]
+
+    context = {
+        "total_appointments": total_appointments,
+        "upcoming_appointments": upcoming_appointments,
+        "total_reports": total_reports,
+        "monthly_appointments_data": monthly_appointments_data,
+        "appointment_status_data": appointment_status_data,
+    }
+    return render(request, "users/patient_home.html", context)
 
 # Admin home view
 @login_required
