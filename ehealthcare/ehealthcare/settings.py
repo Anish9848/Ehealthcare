@@ -40,14 +40,21 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "users",
     "channels",
+    'django.contrib.sites',  # Required by allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',  # Google provider
 ]
 
+SITE_ID = 1
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",  # Existing middleware
+    "allauth.account.middleware.AccountMiddleware",  # Add this line
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -62,7 +69,7 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
-                "django.template.context_processors.request",
+                "django.template.context_processors.request",  # Required by allauth
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
@@ -152,3 +159,35 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Default backend
+    'allauth.account.auth_backends.AuthenticationBackend',  # Allauth backend
+]
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': '175004140498-67fsamfnoij8c5h4d40rtq5aonh95d82.apps.googleusercontent.com',
+            'secret': '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',
+            'key': ''
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+    }
+}
+
+SOCIALACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'
+SOCIALACCOUNT_LOGIN_ON_GET = True
+ACCOUNT_SIGNUP_REDIRECT_URL = '/'  # Redirect after signup
+ACCOUNT_USERNAME_REQUIRED = False  # Disable username requirement
+ACCOUNT_EMAIL_REQUIRED = True  # Ensure email is required
+ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Use email for authentication
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Optional email verification
+ACCOUNT_SIGNUP_FORM_CLASS = None  # Disable custom signup forms
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Automatically complete signup

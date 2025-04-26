@@ -1,4 +1,5 @@
 <!-- filepath: c:\Users\Anish\Desktop\Final Year Project\ehealthcare\users\templates\users\login.html -->
+{% load socialaccount %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,7 +61,35 @@
                 <a href="/register/patient/" class="btn btn-secondary btn-sm">Register as Patient</a>
                 <a href="/register/admin/" class="btn btn-secondary btn-sm">Register as Admin</a>
             </div>
+
+            <div class="register-link">
+                <p>Or login using:</p>
+                <button class="btn btn-danger w-100" onclick="openGoogleLoginPopup()">Login with Google</button>
+            </div>
         </div>
     </div>
+    <script>
+        function openGoogleLoginPopup() {
+            const width = 500;
+            const height = 600;
+            const left = (screen.width - width) / 2;
+            const top = (screen.height - height) / 2;
+    
+            const popup = window.open(
+                "{% provider_login_url 'google' %}?process=login",
+                "Google Login",
+                `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes,status=yes`
+            );
+    
+            // Monitor the popup window to detect when it closes
+            const interval = setInterval(() => {
+                if (popup.closed) {
+                    clearInterval(interval);
+                    // Optionally, refresh the page or perform an action after login
+                    window.location.reload();
+                }
+            }, 500);
+        }
+    </script>
 </body>
 </html>
