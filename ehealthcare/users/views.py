@@ -277,9 +277,9 @@ def view_all_reports(request):
 
     # Fetch all reports for the logged-in patient, grouped by report type
     reports = {
-        "video": list(PatientReport.objects.filter(patient=request.user, report_type="video").values("file", "uploaded_at")),
-        "lab": list(PatientReport.objects.filter(patient=request.user, report_type="lab").values("file", "uploaded_at")),
-        "other": list(PatientReport.objects.filter(patient=request.user, report_type="other").values("file", "uploaded_at")),
+        "video": list(PatientReport.objects.filter(patient=request.user, report_type="video").values("id", "file", "uploaded_at")),
+        "lab": list(PatientReport.objects.filter(patient=request.user, report_type="lab").values("id", "file", "uploaded_at")),
+        "other": list(PatientReport.objects.filter(patient=request.user, report_type="other").values("id", "file", "uploaded_at")),
     }
     return JsonResponse(reports)
 

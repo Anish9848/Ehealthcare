@@ -77,6 +77,20 @@
         canvas {
             max-height: 300px;
         }
+        /* New styles for side-by-side charts */
+        .charts-row {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            margin: 20px auto;
+        }
+        .chart-container-half {
+            width: 48%;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
@@ -162,16 +176,19 @@
         </div>
     </div>
 
-    <!-- Line Chart -->
-    <div class="chart-container">
-        <div class="chart-title">Appointments Over Time</div>
-        <canvas id="lineChart"></canvas>
-    </div>
-
-    <!-- Pie Chart -->
-    <div class="chart-container">
-        <div class="chart-title">Appointment Status Distribution</div>
-        <canvas id="pieChart"></canvas>
+    <!-- Side by side charts -->
+    <div class="charts-row">
+        <!-- Line Chart -->
+        <div class="chart-container-half">
+            <div class="chart-title">Appointments Over Time</div>
+            <canvas id="lineChart"></canvas>
+        </div>
+        
+        <!-- Pie Chart -->
+        <div class="chart-container-half">
+            <div class="chart-title">Appointment Status Distribution</div>
+            <canvas id="pieChart"></canvas>
+        </div>
     </div>
 
     <script>
