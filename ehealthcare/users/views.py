@@ -411,13 +411,18 @@ def start_meeting(request, appointment_id):
 
     try:
         appointment = Appointment.objects.get(id=appointment_id, doctor=request.user)
-        if appointment.status == "pending":
+        # Allow starting meetings for approved appointments
+        if appointment.status == "approved":
+            room_name = f"room-{appointment_id}"
+            return redirect("video_conference", room_name=room_name)
+        elif appointment.status == "pending":
+            # Auto-approve pending appointments when starting
             appointment.status = "approved"
             appointment.save()
-            room_name = f"room-{appointment_id}"  # Ensure this matches the frontend
+            room_name = f"room-{appointment_id}"
             return redirect("video_conference", room_name=room_name)
         else:
-            messages.error(request, "This appointment is not in a pending state.")
+            messages.error(request, "This appointment cannot be started in its current state.")
     except Appointment.DoesNotExist:
         messages.error(request, "Appointment not found.")
 

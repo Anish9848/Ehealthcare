@@ -507,6 +507,37 @@
             font-size: 14px;
         }
         
+        .chat-history {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+        }
+
+        .chat-history p {
+            margin-bottom: 8px;
+            padding: 4px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .chat-history p:last-child {
+            border-bottom: none;
+        }
+
+        #meetingDetailsModal .modal-header {
+            background-color: var(--teams-primary);
+            color: white;
+        }
+
+        #meetingDetailsModal .modal-body h6 {
+            color: var(--teams-dark);
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        #notesDisplay {
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+        }
+
         .status-badge {
             padding: 4px 8px;
             border-radius: 12px;
@@ -905,11 +936,72 @@
     }
 
     function showEventDetails(appointment) {
-        // In a real implementation, this would show a modal with appointment details
         console.log('Appointment details:', appointment);
         
-        // Here you could open a modal with detailed information and action buttons
-        alert(`Patient: ${appointment.patient}\nDate: ${appointment.date}\nTime: ${appointment.time}\nStatus: ${appointment.status}`);
+        // Set meeting details in the modal
+        document.getElementById('detailPatient').textContent = appointment.patient;
+        document.getElementById('detailDate').textContent = formatDateForDisplay(appointment.date);
+        document.getElementById('detailTime').textContent = appointment.time;
+        
+        // Set status with badge
+        const statusEl = document.getElementById('detailStatus');
+        statusEl.innerHTML = `<span class="status-badge status-${appointment.status}">${appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}</span>`;
+        
+        // Set up notes (pretend we might have notes stored in the appointment object)
+        const notesText = appointment.notes || "No notes available for this meeting.";
+        document.getElementById('notesDisplay').textContent = notesText;
+        document.getElementById('meetingNotesEdit').value = notesText;
+        
+        // Show/hide conducted meeting section
+        const conductedSection = document.getElementById('conductedMeetingSection');
+        if (appointment.status === 'conducted') {
+            conductedSection.style.display = 'block';
+            // Load chat history for conducted meetings
+            loadChatHistory(appointment.id);
+        } else {
+            conductedSection.style.display = 'none';
+        }
+        
+        // Configure action button based on status
+        const actionBtn = document.getElementById('viewDetailsBtn');
+        const actionText = document.getElementById('meetingActionText');
+        
+        if (appointment.status === 'approved') {
+            actionBtn.style.display = 'block';
+            actionText.textContent = 'Start Meeting';
+            actionBtn.onclick = () => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('meetingDetailsModal'));
+                modal.hide();
+                startMeeting(appointment.id);
+            };
+        } else if (appointment.status === 'pending') {
+            actionBtn.style.display = 'block';
+            actionText.textContent = 'Approve Meeting';
+            actionBtn.onclick = () => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('meetingDetailsModal'));
+                modal.hide();
+                approveAppointment(appointment.id);
+            };
+        } else if (appointment.status === 'conducted') {
+            actionBtn.style.display = 'none';
+        }
+        
+        // Set up delete button
+        const deleteBtn = document.getElementById('deleteMeetingBtn');
+        if (appointment.status === 'conducted') {
+            deleteBtn.style.display = 'none';
+        } else {
+            deleteBtn.style.display = 'block';
+            deleteBtn.onclick = () => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('meetingDetailsModal'));
+                modal.hide();
+                deleteMeeting(appointment.id);
+            };
+        }
+        
+        // Show the modal
+        const meetingModal = new bootstrap.Modal(document.getElementById('meetingDetailsModal'));
+        meetingModal.show();
     }
 
     function handleDragStart(e) {
@@ -1234,6 +1326,84 @@
     function padZero(num) {
         return num.toString().padStart(2, '0');
     }
+    
+    function loadChatHistory(appointmentId) {
+        // This would typically be an API call to get chat history
+        // For now, we'll use mock data
+        const chatHistoryContent = document.getElementById('chatHistoryContent');
+        chatHistoryContent.innerHTML = `
+            <p><strong>Dr. {{ request.user.username }}:</strong> Hello, how are you feeling today?</p>
+            <p><strong>Patient:</strong> I'm feeling better since starting the medication.</p>
+            <p><strong>Dr. {{ request.user.username }}:</strong> That's good to hear! Any side effects?</p>
+            <p><strong>Patient:</strong> Just a little drowsiness in the morning.</p>
+            <p><strong>Dr. {{ request.user.username }}:</strong> That's normal. It should improve over time. Let's schedule a follow-up in two weeks.</p>
+        `;
+    }
+    
+    function editNotes() {
+        document.getElementById('notesDisplay').style.display = 'none';
+        document.getElementById('notesEditSection').style.display = 'block';
+        document.getElementById('editNotesBtn').style.display = 'none';
+    }
+    
+    function cancelNotesEdit() {
+        document.getElementById('notesDisplay').style.display = 'block';
+        document.getElementById('notesEditSection').style.display = 'none';
+        document.getElementById('editNotesBtn').style.display = 'block';
+    }
+    
+    function saveNotes() {
+        const newNotes = document.getElementById('meetingNotesEdit').value;
+        document.getElementById('notesDisplay').textContent = newNotes;
+        
+        // In a real application, you would save these notes to the backend
+        // For example: fetch('/api/save-notes', { method: 'POST', body: JSON.stringify({ id: appointmentId, notes: newNotes }) })
+        
+        cancelNotesEdit();
+    }
+    
+    function toggleFileUpload() {
+        const section = document.getElementById('fileUploadSection');
+        if (section.style.display === 'none') {
+            section.style.display = 'block';
+        } else {
+            section.style.display = 'none';
+        }
+    }
+    
+    function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        if (!fileInput.files.length) {
+            alert('Please select a file first');
+            return;
+        }
+        
+        const file = fileInput.files[0];
+        // In a real application, you would upload this file to the server
+        // For now, let's just show it in the UI
+        
+        const filesList = document.getElementById('filesList');
+        const noFilesMessage = filesList.parentElement.querySelector('p.text-muted');
+        if (noFilesMessage) noFilesMessage.style.display = 'none';
+        
+        const listItem = document.createElement('li');
+        listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+        listItem.innerHTML = `
+            <span>${file.name}</span>
+            <div>
+                <button class="btn btn-sm btn-outline-primary me-2">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        filesList.appendChild(listItem);
+        toggleFileUpload();
+        fileInput.value = '';
+    }
 
     // Appointment management functions
     function approveAppointment(appointmentId) {
@@ -1340,5 +1510,89 @@
         });
     }
 </script>
+<!-- Meeting Details Modal -->
+<div class="modal fade" id="meetingDetailsModal" tabindex="-1" aria-labelledby="meetingDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="meetingDetailsModalLabel">Meeting Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6>Patient Information</h6>
+                        <p><strong>Name:</strong> <span id="detailPatient"></span></p>
+                        <p><strong>Date:</strong> <span id="detailDate"></span></p>
+                        <p><strong>Time:</strong> <span id="detailTime"></span></p>
+                        <p><strong>Status:</strong> <span id="detailStatus"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Meeting Notes</h6>
+                        <div id="meetingNotesSection">
+                            <div id="notesDisplay" class="border p-2 mb-2 bg-light rounded" style="min-height: 100px;">
+                                No notes available.
+                            </div>
+                            <div id="notesEditSection" style="display: none;">
+                                <textarea id="meetingNotesEdit" class="form-control mb-2" rows="4"></textarea>
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn btn-sm btn-secondary me-2" onclick="cancelNotesEdit()">Cancel</button>
+                                    <button class="btn btn-sm btn-primary" onclick="saveNotes()">Save Notes</button>
+                                </div>
+                            </div>
+                            <button id="editNotesBtn" class="btn btn-sm btn-outline-primary mt-2" onclick="editNotes()">
+                                <i class="fas fa-edit"></i> Edit Notes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Only show for conducted meetings -->
+                <div id="conductedMeetingSection" style="display: none;">
+                    <hr>
+                    <h6>Chat History</h6>
+                    <div class="chat-history p-3 border rounded bg-light" style="max-height: 200px; overflow-y: auto;">
+                        <div id="chatHistoryContent">
+                            <!-- Chat messages will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View Files Section -->
+                <div class="mt-4" id="meetingFilesSection">
+                    <h6>Meeting Files</h6>
+                    <div id="meetingFiles" class="border rounded p-3 bg-light">
+                        <p class="text-muted mb-2">No files attached to this meeting.</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <input type="file" id="meetingFileInput" class="form-control form-control-sm" style="display: none;">
+                            <button class="btn btn-sm btn-primary" onclick="toggleFileUpload()">
+                                <i class="fas fa-paperclip"></i> Attach File
+                            </button>
+                        </div>
+                        <div id="fileUploadSection" class="mt-2" style="display: none;">
+                            <div class="input-group">
+                                <input type="file" class="form-control form-control-sm" id="fileInput">
+                                <button class="btn btn-sm btn-success" type="button" onclick="uploadFile()">Upload</button>
+                                <button class="btn btn-sm btn-secondary" type="button" onclick="toggleFileUpload()">Cancel</button>
+                            </div>
+                        </div>
+                        <ul class="list-group mt-2" id="filesList">
+                            <!-- Files will be listed here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="deleteMeetingBtn" class="btn btn-danger me-auto">
+                    <i class="fas fa-trash"></i> Delete Meeting
+                </button>
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button id="viewDetailsBtn" class="btn btn-primary">
+                    <i class="fas fa-video"></i> <span id="meetingActionText">Start Meeting</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
