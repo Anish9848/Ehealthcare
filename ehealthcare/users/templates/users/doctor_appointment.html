@@ -7,81 +7,528 @@
     <title>Doctor Appointments</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --teams-bg-color: #f5f5f5;
+            --teams-primary: #6264A7;
+            --teams-light: #E1DFFF;
+            --teams-dark: #464775;
+            --teams-border: #E1E1E1;
+            --teams-hover: #f3f2f1;
+        }
+
         body {
-            background-color: #f8f9fa;
-            font-family: Arial, sans-serif;
+            background-color: var(--teams-bg-color);
+            font-family: 'Segoe UI', sans-serif;
+            color: #252423;
+            margin: 0;
+            padding: 0;
         }
+
         .navbar {
-            background-color: #228B22; /* Dark green color */
+            background-color: #228B22;
+            padding: 0.5rem 1rem;
         }
+
         .navbar .navbar-brand {
-            color: black !important; /* Navbar heading in black */
+            color: black !important;
             font-weight: bold;
         }
+
         .navbar .nav-link {
-            color: black !important; /* Default color for all links */
+            color: black !important;
         }
+
         .navbar .nav-link:hover {
-            color: #004d40 !important; /* Darker green for hover effect */
+            color: #004d40 !important;
         }
+
         .navbar .nav-link.text-danger {
-            color: red !important; /* Logout link in red */
+            color: red !important;
         }
+
         .navbar .nav-link.text-danger:hover {
-            color: darkred !important; /* Darker red for hover effect */
+            color: darkred !important;
         }
-        .action-buttons {
+
+        /* Calendar Header */
+        .calendar-header {
             display: flex;
-            justify-content: space-evenly;
-            background-color: #b0c4de;
-            padding: 15px;
-            border-radius: 5px;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background-color: white;
+            border-bottom: 1px solid var(--teams-border);
         }
-        
-        .action-buttons button {
-            width: 180px;
-            height: 50px;
-            font-size: 16px;
+
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            background: none;
             border: none;
-            border-radius: 5px;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            color: #252423;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .btn:hover {
+            background-color: var(--teams-hover);
+        }
+
+        .btn-today {
+            font-weight: 500;
+        }
+
+        .nav-arrows {
+            display: flex;
+            margin: 0 8px;
+        }
+
+        .btn-arrow {
+            padding: 6px;
+            border-radius: 50%;
+            color: #616161;
+        }
+
+        .current-date {
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0 12px;
+        }
+
+        .view-selector {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .view-selector:hover {
+            background-color: var(--teams-hover);
+        }
+
+        /* Calendar Container */
+        .calendar-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 56px);
+            overflow: hidden;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(7, 1fr);
+            flex: 1;
+            overflow-y: auto;
+            background-color: white;
+        }
+
+        .time-column {
+            position: sticky;
+            left: 0;
+            background-color: white;
+            z-index: 2;
+            border-right: 1px solid var(--teams-border);
+        }
+
+        .day-column {
+            border-right: 1px solid var(--teams-border);
+            position: relative;
+        }
+
+        .day-header {
+            height: 70px;
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid var(--teams-border);
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .day-number {
+            font-size: 24px;
+            font-weight: 500;
+            height: 30px;
+            width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .current-day .day-number {
+            background-color: var(--teams-primary);
+            color: white;
+        }
+
+        .day-name {
+            font-size: 12px;
+            color: #605e5c;
+        }
+
+        .time-slot {
+            height: 60px;
+            border-bottom: 1px solid var(--teams-border);
+            position: relative;
+        }
+
+        .time-label {
+            position: absolute;
+            top: -10px;
+            right: 8px;
+            font-size: 12px;
+            color: #605e5c;
+        }
+
+        .time-grid {
+            display: grid;
+            grid-template-rows: repeat(24, 60px);
+            position: relative;
+        }
+
+        /* All-day events */
+        .day-label {
+            position: absolute;
+            top: 5px;
+            width: 90%;
+            left: 5%;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            z-index: 2;
+        }
+
+        /* Event styling */
+        .event {
+            position: absolute;
+            left: 5%;
+            width: 90%;
+            border-radius: 3px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            overflow: hidden;
+            border-left: 3px solid var(--teams-dark);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .event:hover {
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+
+        .event-title {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 3px;
+        }
+
+        .event-details {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #605e5c;
+            font-size: 11px;
+        }
+
+        .event-status {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            font-size: 11px;
+        }
+
+        .event-pending {
+            background-color: #ffefd5;
+        }
+
+        .event-approved {
+            background-color: #e1f5ea;
+        }
+
+        .event-conducted {
+            background-color: #e1dfff;
+        }
+
+        /* Grid markers */
+        .hour-marker {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background-color: var(--teams-border);
+            z-index: 0;
+        }
+
+        .current-time-marker {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #E74C3C;
+            z-index: 2;
+        }
+
+        .current-time-circle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #E74C3C;
+            left: -6px;
+            top: -5px;
+            z-index: 3;
+        }
+
+        /* Action buttons */
+        .action-bar {
+            background-color: white;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--teams-border);
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-button {
+            padding: 6px 16px;
+            border: 1px solid var(--teams-border);
+            border-radius: 4px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: white;
+            color: #252423;
+            cursor: pointer;
+        }
+
+        .action-button:hover {
+            background-color: var(--teams-hover);
+        }
+
+        .action-button.primary {
+            background-color: var(--teams-primary);
+            color: white;
+            border: none;
+        }
+
+        .action-button.primary:hover {
+            background-color: var(--teams-dark);
+        }
+
+        /* Context menu */
+        .context-menu {
+            position: absolute;
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            padding: 8px 0;
+            z-index: 1000;
+            min-width: 180px;
+            display: none;
+        }
+
+        .context-menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .context-menu-item:hover {
+            background-color: var(--teams-hover);
+        }
+
+        /* Modal styles */
+        .form-modal .modal-header {
+            background-color: var(--teams-primary);
+            color: white;
+        }
+
+        .form-modal .btn-primary {
+            background-color: var(--teams-primary);
+            border-color: var(--teams-dark);
+        }
+
+        .form-modal .btn-primary:hover {
+            background-color: var(--teams-dark);
+        }
+
+        /* Tooltip */
+        .tooltip-inner {
+            background-color: white;
+            color: #252423;
+            border: 1px solid var(--teams-border);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            padding: 8px 12px;
+            max-width: 300px;
         }
         
-        .action-buttons .btn-primary { background-color: #5b9bd5; color: white; }
-        .action-buttons .btn-secondary { background-color: #ed7d31; color: white; }
-        .action-buttons .btn-success { background-color: #70ad47; color: white; }
-        .action-buttons .btn-warning { background-color: #ffc000; color: black; }
-        
-        .appointment-table-container {
-            margin-top: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        /* Debug styles */
+        .debug-info {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        /* New styles for meetings table */
+        .meetings-table-container {
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin: 16px;
+            padding: 16px;
+            overflow: hidden;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 900;
+            border: 1px solid var(--teams-border);
         }
         
-        .appointment-table {
+        .meetings-table-container h4 {
+            color: var(--teams-primary);
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+        
+        .meetings-table {
             width: 100%;
             border-collapse: collapse;
         }
         
-        .appointment-table th, .appointment-table td {
-            padding: 15px;
-            text-align: center;
-            border: 1px solid #ddd;
+        .meetings-table th {
+            text-align: left;
+            padding: 8px 12px;
+            border-bottom: 2px solid var(--teams-border);
+            color: #605e5c;
+            font-weight: 500;
+            font-size: 13px;
         }
         
-        .appointment-table th {
-            background-color: #e9ecef;
-            font-size: 18px;
+        .meetings-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--teams-border);
+            font-size: 13px;
         }
         
-        .appointment-table tbody tr:nth-child(even) {
-            background-color: #f2f2f2;
+        .meetings-table tr:hover {
+            background-color: var(--teams-hover);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border: none;
+        }
+        
+        .action-btn-primary {
+            background-color: var(--teams-primary);
+            color: white;
+        }
+
+        .action-btn-primary:hover {
+            background-color: var(--teams-dark);
+        }
+        
+        .action-btn-danger {
+            background-color: #d9534f;
+            color: white;
+        }
+
+        .action-btn-danger:hover {
+            background-color: #c9302c;
+        }
+        
+        .action-btn-success {
+            background-color: #5cb85c;
+            color: white;
+        }
+
+        .action-btn-success:hover {
+            background-color: #449d44;
+        }
+        
+        .meetings-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 910;
+            background-color: var(--teams-primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-size: 14px;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: white;
+            display: inline-block;
+        }
+        
+        .status-pending {
+            background-color: #ff9800;
+        }
+        
+        .status-approved {
+            background-color: #4caf50;
+        }
+        
+        .status-conducted {
+            background-color: var(--teams-primary);
         }
     </style>
 </head>
+<body>
 
 <!-- Navigation Bar -->
 <nav class="navbar navbar-expand-lg">
@@ -101,172 +548,797 @@
     </div>
 </nav>
 
-    <!-- Main Content -->
-    <div class="container">
-        <div class="appointment-header text-center mt-4">
-            <h2>Appointments</h2>
-            <p class="text-muted">Manage your appointments with patients.</p>
+<!-- Calendar Container -->
+<div class="calendar-container">
+    <!-- Calendar Header -->
+    <div class="calendar-header">
+        <div class="calendar-nav">
+            <button class="btn btn-today" id="todayBtn">
+                <i class="fas fa-calendar-day me-2"></i>
+                Today
+            </button>
+            <div class="nav-arrows">
+                <button class="btn btn-arrow" id="prevBtn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="btn btn-arrow" id="nextBtn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <span class="current-date" id="currentDate">January 2023</span>
         </div>
-
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            <button class="btn btn-primary">Meet Now</button>
-            <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#scheduleMeetingModal">Schedule a Meeting</button>
-            <button class="btn btn-success">Chat</button>
-            <button class="btn btn-warning">Notification</button>
-        </div>
-
-        <!-- Appointment Table -->
-        <div class="appointment-table-container">
-            <table class="table table-bordered appointment-table">
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Day</th>
-                        <th>Patient</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for appointment in appointments %}
-                        <tr>
-                            <td>{{ appointment.time }}</td>
-                            <td>{{ appointment.date }}</td>
-                            <td>{{ appointment.patient.username }}</td>
-                            <td>
-                                <span class="badge {% if appointment.status == 'approved' %}bg-success{% elif appointment.status == 'pending' %}bg-warning{% elif appointment.status == 'conducted' %}bg-info{% else %}bg-danger{% endif %}">
-                                    {{ appointment.status|title }}
-                                </span>
-                                {% if appointment.status == 'approved' %}
-                                    <p class="text-muted">Scheduled Meeting: {{ appointment.meeting_title }} on {{ appointment.date }} at {{ appointment.time }}</p>
-                                    <button class="btn btn-primary btn-sm ms-2" onclick="startMeeting('{{ appointment.id }}')">Start Meeting</button>
-                                    <button class="btn btn-warning btn-sm ms-2" onclick="markAsConducted('{{ appointment.id }}')">Mark as Conducted</button>
-                                {% elif appointment.status == 'pending' %}
-                                    <button class="btn btn-secondary btn-sm ms-2" onclick="approveAppointment('{{ appointment.id }}')">Approve Appointment</button>
-                                {% elif appointment.status == 'conducted' %}
-                                    <p class="text-muted">Meeting was conducted on {{ appointment.date }} at {{ appointment.time }}</p>
-                                    <button class="btn btn-danger btn-sm ms-2" onclick="deleteMeeting('{{ appointment.id }}')">Delete Meeting</button>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center">No appointments found.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="view-selector">
+            <span>Week</span>
+            <i class="fas fa-chevron-down ms-2"></i>
         </div>
     </div>
 
-    <!-- Modal for Scheduling a Meeting -->
-    <div class="modal fade" id="scheduleMeetingModal" tabindex="-1" aria-labelledby="scheduleMeetingModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="scheduleMeetingModalLabel">Schedule a Meeting</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="scheduleMeetingForm">
-                        <div class="mb-3">
-                            <label for="meetingDate" class="form-label">Meeting Date</label>
-                            <input type="date" class="form-control" id="meetingDate" name="meeting_date" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="meetingTime" class="form-label">Meeting Time</label>
-                            <input type="time" class="form-control" id="meetingTime" name="meeting_time" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="meetingTitle" class="form-label">Meeting Title</label>
-                            <input type="text" class="form-control" id="meetingTitle" name="meeting_title" placeholder="Enter meeting title" required>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="isRecurring" name="is_recurring">
-                            <label class="form-check-label" for="isRecurring">Recurring Meeting</label>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="submitScheduleMeeting()">Save</button>
-                </div>
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <button class="action-button primary" data-bs-toggle="modal" data-bs-target="#scheduleMeetingModal">
+            <i class="fas fa-plus"></i>
+            New meeting
+        </button>
+        <button class="action-button">
+            <i class="fas fa-video"></i>
+            Meet now
+        </button>
+        <button class="action-button">
+            <i class="fas fa-bell"></i>
+            Notifications
+        </button>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="calendar-grid" id="calendarGrid">
+        <!-- Time Column -->
+        <div class="time-column">
+            <div class="day-header"></div>
+            <!-- Time slots will be generated by JavaScript -->
+        </div>
+        
+        <!-- Day columns will be generated by JavaScript -->
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="eventContextMenu">
+        <div class="context-menu-item" id="startMeetingOption">
+            <i class="fas fa-video"></i>
+            Start Meeting
+        </div>
+        <div class="context-menu-item" id="markAsConductedOption">
+            <i class="fas fa-check"></i>
+            Mark as Conducted
+        </div>
+        <div class="context-menu-item" id="approveOption">
+            <i class="fas fa-thumbs-up"></i>
+            Approve Appointment
+        </div>
+        <div class="context-menu-item" id="deleteOption">
+            <i class="fas fa-trash"></i>
+            Delete
+        </div>
+    </div>
+</div>
+
+<!-- Toggle Button for Meetings Table -->
+<button class="meetings-toggle-btn" id="toggleMeetingsBtn">
+    <i class="fas fa-list-alt me-2"></i> Show Appointments
+</button>
+
+<!-- Meetings Table Container -->
+<div class="meetings-table-container" id="meetingsTableContainer" style="display: none;">
+    <h4>Your Scheduled Appointments</h4>
+    <table class="meetings-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Patient</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="meetingsTableBody">
+            <!-- Meetings will be dynamically inserted here -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal for Scheduling a Meeting -->
+<div class="modal fade form-modal" id="scheduleMeetingModal" tabindex="-1" aria-labelledby="scheduleMeetingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scheduleMeetingModalLabel">Schedule a Meeting</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleMeetingForm">
+                    <div class="mb-3">
+                        <label for="meetingDate" class="form-label">Meeting Date</label>
+                        <input type="date" class="form-control" id="meetingDate" name="meeting_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="meetingTime" class="form-label">Meeting Time</label>
+                        <input type="time" class="form-control" id="meetingTime" name="meeting_time" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="meetingTitle" class="form-label">Meeting Title</label>
+                        <input type="text" class="form-control" id="meetingTitle" name="meeting_title" placeholder="Enter meeting title" required>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="isRecurring" name="is_recurring">
+                        <label class="form-check-label" for="isRecurring">Recurring Meeting</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitScheduleMeeting()">Save</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        function approveAppointment(appointmentId) {
-            if (confirm("Do you want to approve this appointment?")) {
-                fetch(`/doctor/appointments/approve/${appointmentId}/`, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": "{{ csrf_token }}",
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.success);
-                        location.reload(); // Refresh the page to show updated status
-                    } else {
-                        alert(data.error || "Failed to approve the appointment.");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error approving appointment:", error);
-                    alert("An error occurred. Please try again.");
-                });
+<script>
+    // Store appointments data
+    const appointments = [
+        {% for appointment in appointments %}
+        {
+            id: {{ appointment.id }},
+            patient: "{{ appointment.patient.username }}",
+            date: "{{ appointment.date|date:'Y-m-d' }}",
+            time: "{{ appointment.time }}",
+            status: "{{ appointment.status }}",
+            duration: 60 // Default 60 minutes
+        },
+        {% endfor %}
+    ];
+
+    let selectedEvent = null;
+    let weekStartDate = new Date();
+    weekStartDate.setDate(weekStartDate.getDate() - weekStartDate.getDay()); // Set to Sunday
+
+    // Initialize calendar on document load
+    document.addEventListener("DOMContentLoaded", function() {
+        console.log("Available appointments:", appointments);
+        initCalendar();
+        updateCalendarHeader();
+        renderCalendar();
+        initEventListeners();
+        setCurrentTimeMarker();
+        populateMeetingsTable();
+    });
+
+    function initCalendar() {
+        const timeColumn = document.querySelector('.time-column');
+        
+        // Add day header to time column
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'day-header';
+        timeColumn.appendChild(dayHeader);
+        
+        // Add time slots
+        for (let hour = 0; hour < 24; hour++) {
+            const timeSlot = document.createElement('div');
+            timeSlot.className = 'time-slot';
+            
+            const timeLabel = document.createElement('div');
+            timeLabel.className = 'time-label';
+            timeLabel.textContent = formatHour(hour);
+            
+            timeSlot.appendChild(timeLabel);
+            timeColumn.appendChild(timeSlot);
+        }
+    }
+
+    function renderCalendar() {
+        // Clear existing day columns
+        const calendarGrid = document.getElementById('calendarGrid');
+        const dayColumns = document.querySelectorAll('.day-column');
+        dayColumns.forEach(col => col.remove());
+        
+        // Get current week's dates
+        const dates = getWeekDates(weekStartDate);
+        
+        // Create day columns
+        dates.forEach((date, index) => {
+            const dayColumn = createDayColumn(date, index);
+            calendarGrid.appendChild(dayColumn);
+            
+            // Format column date in YYYY-MM-DD format to match Django's format
+            const formattedDate = formatDateForComparison(date);
+            
+            // Add events for this day
+            const dayEvents = appointments.filter(appt => {
+                return appt.date === formattedDate;
+            });
+            
+            if (dayEvents.length > 0) {
+                console.log(`Found ${dayEvents.length} events for ${formattedDate}`);
             }
+            
+            dayEvents.forEach(event => {
+                addEventToDay(event, dayColumn);
+            });
+        });
+    }
+
+    // Helper function to format date in YYYY-MM-DD format for comparison
+    function formatDateForComparison(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function createDayColumn(date, index) {
+        const dayColumn = document.createElement('div');
+        dayColumn.className = 'day-column';
+        dayColumn.dataset.date = formatDateForComparison(date);
+        
+        // Add day header
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'day-header';
+        if (isToday(date)) {
+            dayHeader.classList.add('current-day');
         }
         
-        function markAsConducted(appointmentId) {
-            if (confirm("Mark this meeting as conducted?")) {
-                fetch(`/doctor/appointments/mark-conducted/${appointmentId}/`, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": "{{ csrf_token }}",
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.success);
-                        location.reload();
-                    } else {
-                        alert(data.error || "Failed to update meeting status.");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error updating meeting status:", error);
-                    alert("An error occurred. Please try again.");
-                });
-            }
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'day-number';
+        dayNumber.textContent = date.getDate();
+        
+        const dayName = document.createElement('div');
+        dayName.className = 'day-name';
+        dayName.textContent = getDayName(date);
+        
+        dayHeader.appendChild(dayNumber);
+        dayHeader.appendChild(dayName);
+        dayColumn.appendChild(dayHeader);
+        
+        // Add time grid
+        const timeGrid = document.createElement('div');
+        timeGrid.className = 'time-grid';
+        
+        // Add hour markers for visual guidance
+        for (let hour = 0; hour < 24; hour++) {
+            const hourMarker = document.createElement('div');
+            hourMarker.className = 'hour-marker';
+            hourMarker.style.top = `${hour * 60}px`;
+            timeGrid.appendChild(hourMarker);
         }
         
-        function deleteMeeting(appointmentId) {
-            if (confirm("Are you sure you want to delete this meeting? This action cannot be undone.")) {
-                fetch(`/doctor/appointments/delete-meeting/${appointmentId}/`, {
-                    method: "DELETE",
-                    headers: {
-                        "X-CSRFToken": "{{ csrf_token }}",
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.success);
-                        location.reload();
-                    } else {
-                        alert(data.error || "Failed to delete the meeting.");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error deleting meeting:", error);
-                    alert("An error occurred. Please try again.");
-                });
-            }
+        dayColumn.appendChild(timeGrid);
+        
+        // Add drop event listeners for drag-and-drop
+        timeGrid.addEventListener('dragover', handleDragOver);
+        timeGrid.addEventListener('drop', handleDrop);
+        
+        return dayColumn;
+    }
+
+    function addEventToDay(event, dayColumn) {
+        const timeGrid = dayColumn.querySelector('.time-grid');
+        const eventEl = document.createElement('div');
+        eventEl.className = 'event';
+        eventEl.dataset.appointmentId = event.id;
+        eventEl.dataset.status = event.status;
+        
+        // Add appropriate class based on status
+        if (event.status === 'pending') {
+            eventEl.classList.add('event-pending');
+        } else if (event.status === 'approved') {
+            eventEl.classList.add('event-approved');
+        } else if (event.status === 'conducted') {
+            eventEl.classList.add('event-conducted');
         }
-    </script>
+        
+        // Calculate position
+        const [hours, minutes] = event.time.split(':').map(Number);
+        const topPosition = hours * 60 + minutes;
+        const height = event.duration;
+        
+        eventEl.style.top = `${topPosition}px`;
+        eventEl.style.height = `${height}px`;
+        
+        // Event content
+        const eventTitle = document.createElement('div');
+        eventTitle.className = 'event-title';
+        eventTitle.textContent = `Patient: ${event.patient}`;
+        
+        const eventDetails = document.createElement('div');
+        eventDetails.className = 'event-details';
+        eventDetails.textContent = `${event.time}`;
+        
+        const eventStatus = document.createElement('div');
+        eventStatus.className = 'event-status';
+        eventStatus.textContent = event.status.charAt(0).toUpperCase() + event.status.slice(1);
+        
+        eventEl.appendChild(eventTitle);
+        eventEl.appendChild(eventDetails);
+        eventEl.appendChild(eventStatus);
+        
+        // Make draggable
+        eventEl.setAttribute('draggable', true);
+        eventEl.addEventListener('dragstart', handleDragStart);
+        
+        // Add context menu on right-click
+        eventEl.addEventListener('contextmenu', showEventContextMenu);
+        
+        // Add click event for viewing appointment details
+        eventEl.addEventListener('click', function(e) {
+            e.preventDefault();
+            showEventDetails(event);
+        });
+        
+        timeGrid.appendChild(eventEl);
+    }
+
+    function showEventContextMenu(e) {
+        e.preventDefault();
+        
+        const appointmentId = this.dataset.appointmentId;
+        const status = this.dataset.status;
+        selectedEvent = appointments.find(appt => appt.id == appointmentId);
+        
+        const contextMenu = document.getElementById('eventContextMenu');
+        
+        // Show/hide options based on appointment status
+        document.getElementById('startMeetingOption').style.display = status === 'approved' ? 'flex' : 'none';
+        document.getElementById('markAsConductedOption').style.display = status === 'approved' ? 'flex' : 'none';
+        document.getElementById('approveOption').style.display = status === 'pending' ? 'flex' : 'none';
+        document.getElementById('deleteOption').style.display = status === 'conducted' ? 'none' : 'flex'; // Allow delete for non-conducted meetings
+        
+        // Position the menu
+        contextMenu.style.left = `${e.pageX}px`;
+        contextMenu.style.top = `${e.pageY}px`;
+        contextMenu.style.display = 'block';
+        
+        // Click outside to close
+        document.addEventListener('click', hideContextMenu);
+    }
+
+    function hideContextMenu() {
+        document.getElementById('eventContextMenu').style.display = 'none';
+        document.removeEventListener('click', hideContextMenu);
+    }
+
+    function showEventDetails(appointment) {
+        // In a real implementation, this would show a modal with appointment details
+        console.log('Appointment details:', appointment);
+        
+        // Here you could open a modal with detailed information and action buttons
+        alert(`Patient: ${appointment.patient}\nDate: ${appointment.date}\nTime: ${appointment.time}\nStatus: ${appointment.status}`);
+    }
+
+    function handleDragStart(e) {
+        const appointmentId = this.dataset.appointmentId;
+        e.dataTransfer.setData('appointmentId', appointmentId);
+        e.dataTransfer.effectAllowed = 'move';
+        
+        // Add a class to show it's being dragged
+        this.classList.add('dragging');
+        
+        // Remove the class when drag ends
+        setTimeout(() => {
+            this.classList.remove('dragging');
+        }, 0);
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        // Calculate time from mouse position
+        const rect = this.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        
+        // Show a temporary indicator where the event would be placed
+        let timeIndicator = document.getElementById('dragTimeIndicator');
+        if (!timeIndicator) {
+            timeIndicator = document.createElement('div');
+            timeIndicator.id = 'dragTimeIndicator';
+            timeIndicator.style.position = 'absolute';
+            timeIndicator.style.left = '0';
+            timeIndicator.style.right = '0';
+            timeIndicator.style.height = '2px';
+            timeIndicator.style.backgroundColor = 'var(--teams-primary)';
+            timeIndicator.style.zIndex = '999';
+            this.appendChild(timeIndicator);
+        }
+        
+        // Round to nearest 15-minute interval
+        const roundedMinutes = Math.round(y / 15) * 15;
+        timeIndicator.style.top = `${roundedMinutes}px`;
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        
+        // Remove the time indicator
+        const indicator = document.getElementById('dragTimeIndicator');
+        if (indicator) indicator.remove();
+        
+        const appointmentId = e.dataTransfer.getData('appointmentId');
+        const appointment = appointments.find(appt => appt.id == appointmentId);
+        
+        if (!appointment) return;
+        
+        // Calculate new time
+        const rect = this.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const totalMinutes = Math.round(y / 15) * 15; // Round to nearest 15 minutes
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        
+        const newTime = `${padZero(hours)}:${padZero(minutes)}`;
+        
+        // Get the date of the column where dropped
+        const dayColumn = e.currentTarget.closest('.day-column');
+        const newDate = dayColumn.dataset.date;
+        
+        // Update the appointment (this would typically make an AJAX request)
+        console.log(`Moving appointment ${appointmentId} to ${newDate} at ${newTime}`);
+        
+        // In a production app, you'd send an API request to update the appointment
+        // For now, just update the UI to reflect the change
+        appointment.date = newDate;
+        appointment.time = newTime;
+        
+        // Re-render the calendar to reflect changes
+        renderCalendar();
+        populateMeetingsTable();
+        
+        // Show confirmation
+        const message = document.createElement('div');
+        message.className = 'debug-info';
+        message.textContent = `Moved appointment to ${newDate} at ${newTime}`;
+        message.style.position = 'fixed';
+        message.style.bottom = '20px';
+        message.style.right = '20px';
+        message.style.zIndex = '1050';
+        document.body.appendChild(message);
+        
+        // Remove message after 3 seconds
+        setTimeout(() => {
+            message.remove();
+        }, 3000);
+    }
+
+    function initEventListeners() {
+        // Today button
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            weekStartDate = new Date();
+            weekStartDate.setDate(weekStartDate.getDate() - weekStartDate.getDay());
+            updateCalendarHeader();
+            renderCalendar();
+        });
+        
+        // Previous week button
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            weekStartDate.setDate(weekStartDate.getDate() - 7);
+            updateCalendarHeader();
+            renderCalendar();
+        });
+        
+        // Next week button
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            weekStartDate.setDate(weekStartDate.getDate() + 7);
+            updateCalendarHeader();
+            renderCalendar();
+        });
+        
+        // Context menu actions
+        document.getElementById('startMeetingOption').addEventListener('click', () => {
+            if (selectedEvent) {
+                startMeeting(selectedEvent.id);
+            }
+            hideContextMenu();
+        });
+        
+        document.getElementById('markAsConductedOption').addEventListener('click', () => {
+            if (selectedEvent) {
+                markAsConducted(selectedEvent.id);
+            }
+            hideContextMenu();
+        });
+        
+        document.getElementById('approveOption').addEventListener('click', () => {
+            if (selectedEvent) {
+                approveAppointment(selectedEvent.id);
+            }
+            hideContextMenu();
+        });
+        
+        document.getElementById('deleteOption').addEventListener('click', () => {
+            if (selectedEvent) {
+                deleteMeeting(selectedEvent.id);
+            }
+            hideContextMenu();
+        });
+
+        // Toggle meetings table
+        document.getElementById('toggleMeetingsBtn').addEventListener('click', function() {
+            const container = document.getElementById('meetingsTableContainer');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                this.innerHTML = '<i class="fas fa-times me-2"></i> Hide Appointments';
+            } else {
+                container.style.display = 'none';
+                this.innerHTML = '<i class="fas fa-list-alt me-2"></i> Show Appointments';
+            }
+        });
+    }
+
+    function updateCalendarHeader() {
+        const weekEnd = new Date(weekStartDate);
+        weekEnd.setDate(weekStartDate.getDate() + 6);
+        
+        const options = { month: 'long', year: 'numeric' };
+        const formattedDate = weekStartDate.toLocaleDateString('en-US', options);
+        
+        document.getElementById('currentDate').textContent = formattedDate;
+    }
+
+    function setCurrentTimeMarker() {
+        // Function to update current time marker
+        function updateTimeMarker() {
+            // Remove existing markers
+            document.querySelectorAll('.current-time-marker').forEach(el => el.remove());
+            
+            const now = new Date();
+            const currentDay = now.getDay(); // 0-6, where 0 is Sunday
+            
+            // Only show marker for the current day
+            const todayColumn = document.querySelector(`.day-column:nth-child(${currentDay + 2})`);
+            if (!todayColumn) return;
+            
+            const timeGrid = todayColumn.querySelector('.time-grid');
+            
+            // Calculate position
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const topPosition = hours * 60 + minutes;
+            
+            // Create marker
+            const marker = document.createElement('div');
+            marker.className = 'current-time-marker';
+            marker.style.top = `${topPosition}px`;
+            
+            // Add circle on the left
+            const circle = document.createElement('div');
+            circle.className = 'current-time-circle';
+            marker.appendChild(circle);
+            
+            timeGrid.appendChild(marker);
+        }
+        
+        // Update immediately and then every minute
+        updateTimeMarker();
+        setInterval(updateTimeMarker, 60000);
+    }
+
+    // Function to populate the meetings table
+    function populateMeetingsTable() {
+        const tableBody = document.getElementById('meetingsTableBody');
+        tableBody.innerHTML = '';
+        
+        if (appointments.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="5" class="text-center">No appointments found.</td>';
+            tableBody.appendChild(row);
+            return;
+        }
+        
+        // Sort appointments by date and time
+        const sortedAppointments = [...appointments].sort((a, b) => {
+            // First compare by date
+            if (a.date < b.date) return -1;
+            if (a.date > b.date) return 1;
+            
+            // If same date, compare by time
+            if (a.time < b.time) return -1;
+            if (a.time > b.time) return 1;
+            
+            return 0;
+        });
+        
+        // Add appointments to table
+        sortedAppointments.forEach(appointment => {
+            const row = document.createElement('tr');
+            
+            // Format date for display (YYYY-MM-DD to DD/MM/YYYY)
+            const formattedDate = formatDateForDisplay(appointment.date);
+            
+            // Create status badge
+            let statusBadge = `<span class="status-badge status-${appointment.status}">${appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}</span>`;
+            
+            // Action buttons depend on appointment status
+            let actionButtons = '';
+            if (appointment.status === 'approved') {
+                actionButtons = `
+                    <button onclick="startMeeting(${appointment.id})" class="action-btn action-btn-primary">
+                        <i class="fas fa-video"></i> Start Meeting
+                    </button>
+                    <button onclick="markAsConducted(${appointment.id})" class="action-btn action-btn-success">
+                        <i class="fas fa-check"></i> Mark Conducted
+                    </button>
+                `;
+            } else if (appointment.status === 'pending') {
+                actionButtons = `
+                    <button onclick="approveAppointment(${appointment.id})" class="action-btn action-btn-success">
+                        <i class="fas fa-thumbs-up"></i> Approve
+                    </button>
+                `;
+            }
+            
+            // Add delete button for all appointments except conducted ones
+            if (appointment.status !== 'conducted') {
+                actionButtons += `
+                    <button onclick="deleteMeeting(${appointment.id})" class="action-btn action-btn-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                `;
+            }
+            
+            row.innerHTML = `
+                <td>${formattedDate}</td>
+                <td>${appointment.time}</td>
+                <td>${appointment.patient}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="action-buttons">
+                        ${actionButtons}
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function formatDateForDisplay(dateString) {
+        const date = new Date(dateString + 'T00:00:00'); // Add time to avoid timezone issues
+        return date.toLocaleDateString('en-GB');
+    }
+
+    // Helper Functions
+    function getWeekDates(startDate) {
+        const dates = [];
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+            dates.push(date);
+        }
+        return dates;
+    }
+
+    function formatHour(hour) {
+        return hour === 0 || hour === 24 ? '12 AM' : 
+               hour < 12 ? `${hour} AM` : 
+               hour === 12 ? '12 PM' : 
+               `${hour - 12} PM`;
+    }
+
+    function getDayName(date) {
+        return date.toLocaleDateString('en-US', { weekday: 'long' });
+    }
+
+    function isToday(date) {
+        const today = new Date();
+        return date.getDate() === today.getDate() &&
+               date.getMonth() === today.getMonth() &&
+               date.getFullYear() === today.getFullYear();
+    }
+
+    function padZero(num) {
+        return num.toString().padStart(2, '0');
+    }
+
+    // Appointment management functions
+    function approveAppointment(appointmentId) {
+        if (confirm("Do you want to approve this appointment?")) {
+            fetch(`/doctor/appointments/approve/${appointmentId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.success);
+                    location.reload(); // Refresh the page to show updated status
+                } else {
+                    alert(data.error || "Failed to approve the appointment.");
+                }
+            })
+            .catch(error => {
+                console.error("Error approving appointment:", error);
+                alert("An error occurred. Please try again.");
+            });
+        }
+    }
+    
+    function markAsConducted(appointmentId) {
+        if (confirm("Mark this meeting as conducted?")) {
+            fetch(`/doctor/appointments/mark-conducted/${appointmentId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.success);
+                    location.reload();
+                } else {
+                    alert(data.error || "Failed to update meeting status.");
+                }
+            })
+            .catch(error => {
+                console.error("Error updating meeting status:", error);
+                alert("An error occurred. Please try again.");
+            });
+        }
+    }
+    
+    function deleteMeeting(appointmentId) {
+        if (confirm("Are you sure you want to delete this meeting? This action cannot be undone.")) {
+            fetch(`/doctor/appointments/delete-meeting/${appointmentId}/`, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.success);
+                    location.reload();
+                } else {
+                    alert(data.error || "Failed to delete the meeting.");
+                }
+            })
+            .catch(error => {
+                console.error("Error deleting meeting:", error);
+                alert("An error occurred. Please try again.");
+            });
+        }
+    }
+
+    function startMeeting(appointmentId) {
+        window.location.href = `/doctor/appointments/start-meeting/${appointmentId}/`;
+    }
+
+    function submitScheduleMeeting() {
+        const form = document.getElementById('scheduleMeetingForm');
+        const formData = new FormData(form);
+        
+        fetch('/doctor/schedule-meeting/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.success);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('scheduleMeetingModal'));
+                modal.hide();
+                location.reload();
+            } else {
+                alert(data.error || "Failed to schedule the meeting.");
+            }
+        })
+        .catch(error => {
+            console.error("Error scheduling meeting:", error);
+            alert("An error occurred. Please try again.");
+        });
+    }
+</script>
 </body>
 </html>
