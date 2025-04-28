@@ -197,9 +197,27 @@
 
     <script>
         function approveAppointment(appointmentId) {
-            // You can add logic here to approve the appointment
-            alert("Approving appointment: " + appointmentId);
-            // After implementing backend endpoint, you would make an AJAX call here
+            if (confirm("Do you want to approve this appointment?")) {
+                fetch(`/doctor/appointments/approve/${appointmentId}/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.success);
+                        location.reload(); // Refresh the page to show updated status
+                    } else {
+                        alert(data.error || "Failed to approve the appointment.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error approving appointment:", error);
+                    alert("An error occurred. Please try again.");
+                });
+            }
         }
         
         function markAsConducted(appointmentId) {

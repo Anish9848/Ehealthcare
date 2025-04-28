@@ -483,3 +483,19 @@ def mark_meeting_conducted(request, appointment_id):
         return JsonResponse({"success": "Meeting marked as conducted successfully!"})
     except Appointment.DoesNotExist:
         return JsonResponse({"error": "Meeting not found"}, status=404)
+    
+@login_required
+def approve_appointment(request, appointment_id):
+    if request.user.role != "doctor":
+        return JsonResponse({"error": "Unauthorized access"}, status=403)
+
+    try:
+        appointment = Appointment.objects.get(id=appointment_id, doctor=request.user)
+        if appointment.status == "pending":
+            appointment.status = "approved"
+            appointment.save()
+            return JsonResponse({"success": "Appointment approved successfully!"})
+        else:
+            return JsonResponse({"error": "This appointment is not in a pending state."}, status=400)
+    except Appointment.DoesNotExist:
+        return JsonResponse({"error": "Appointment not found"}, status=404)
