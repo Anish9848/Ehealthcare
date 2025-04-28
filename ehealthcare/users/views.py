@@ -458,3 +458,28 @@ def video_conference_view(request, room_name):
         "room_name": room_name,
         "username": request.user.username,
     })
+
+@login_required
+def delete_meeting(request, appointment_id):
+    if request.user.role != "doctor":
+        return JsonResponse({"error": "Unauthorized access"}, status=403)
+
+    try:
+        appointment = Appointment.objects.get(id=appointment_id, doctor=request.user)
+        appointment.delete()
+        return JsonResponse({"success": "Meeting deleted successfully!"})
+    except Appointment.DoesNotExist:
+        return JsonResponse({"error": "Meeting not found"}, status=404)
+
+@login_required
+def mark_meeting_conducted(request, appointment_id):
+    if request.user.role != "doctor":
+        return JsonResponse({"error": "Unauthorized access"}, status=403)
+
+    try:
+        appointment = Appointment.objects.get(id=appointment_id, doctor=request.user)
+        appointment.status = "conducted"
+        appointment.save()
+        return JsonResponse({"success": "Meeting marked as conducted successfully!"})
+    except Appointment.DoesNotExist:
+        return JsonResponse({"error": "Meeting not found"}, status=404)

@@ -23,4 +23,6 @@ urlpatterns = [
     path("doctor/appointments/start-meeting/<int:appointment_id>/", views.start_meeting, name="start_meeting"),
     path("doctor/appointments/schedule-meeting/", views.schedule_meeting, name="schedule_meeting"),
     path("video-conference/<str:room_name>/", views.video_conference_view, name="video_conference"),
+    path("doctor/appointments/delete-meeting/<int:appointment_id>/", views.delete_meeting, name="delete_meeting"),
+    path("doctor/appointments/mark-conducted/<int:appointment_id>/", views.mark_meeting_conducted, name="mark_meeting_conducted"),
 ]
