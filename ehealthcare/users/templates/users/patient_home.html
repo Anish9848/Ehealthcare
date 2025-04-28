@@ -104,6 +104,48 @@
         <p>Here is an overview of your appointments and reports:</p>
     </div>
 
+    <div class="chart-container">
+        <div class="chart-title">Your Scheduled Appointments</div>
+        {% if scheduled_meetings %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Doctor</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in scheduled_meetings %}
+                    <tr>
+                        <td>{{ appointment.date }}</td>
+                        <td>{{ appointment.time }}</td>
+                        <td>Dr. {{ appointment.doctor.username }}</td>
+                        <td><span class="badge bg-success">Approved</span></td>
+                        <td>
+                            <a href="/video-conference/room-{{ appointment.id }}/" class="btn btn-primary btn-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5z"/>
+                                </svg>
+                                Join Meeting
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center">
+            <p class="text-muted">You don't have any scheduled appointments at the moment.</p>
+            <a href="{% url 'patient_appointment' %}" class="btn btn-outline-primary">Book an Appointment</a>
+        </div>
+        {% endif %}
+    </div>
+
     <!-- Statistics Section -->
     <div class="stats-container">
         <div class="stat-card">

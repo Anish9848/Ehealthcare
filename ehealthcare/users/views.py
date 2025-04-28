@@ -94,6 +94,12 @@ def patient_home_view(request):
     upcoming_appointments = Appointment.objects.filter(patient=request.user, status="approved").count()
     total_reports = PatientReport.objects.filter(patient=request.user).count()
 
+    # Fetch detailed information about upcoming appointments
+    scheduled_meetings = Appointment.objects.filter(
+        patient=request.user, 
+        status="approved"
+    ).select_related('doctor').order_by('date', 'time')
+
     # Monthly data for line graph
     current_year = datetime.now().year
     monthly_appointments = Appointment.objects.filter(patient=request.user, date__year=current_year).annotate(
@@ -114,6 +120,7 @@ def patient_home_view(request):
     context = {
         "total_appointments": total_appointments,
         "upcoming_appointments": upcoming_appointments,
+        "scheduled_meetings": scheduled_meetings,  # Add this new variable
         "total_reports": total_reports,
         "monthly_appointments_data": monthly_appointments_data,
         "appointment_status_data": appointment_status_data,
