@@ -193,30 +193,31 @@
 
     <script>
         // Data from the backend
-        const monthlyAppointments = {{ monthly_appointments_data|safe }}; // Example: [5, 10, 15, ...]
-        const appointmentStatusData = {{ appointment_status_data|safe }}; // Example: [10, 5, 2]
+        const monthlyAppointments = {{ monthly_appointments_data|safe }};
+        const appointmentStatusData = {{ appointment_status_data|safe }};
 
         // Line Chart for Appointments Over Time
         const lineCtx = document.getElementById('lineChart').getContext('2d');
         new Chart(lineCtx, {
             type: 'line',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], // Months
-                datasets: [
-                    {
-                        label: 'Appointments',
-                        data: monthlyAppointments,
-                        borderColor: '#4caf50', // Green
-                        backgroundColor: 'rgba(76, 175, 80, 0.2)',
-                        fill: true,
-                        tension: 0.3
-                    }
-                ]
+                labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+                datasets: [{
+                    label: 'Appointments',
+                    data: monthlyAppointments,
+                    borderColor: '#4caf50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                    fill: true,
+                    tension: 0.3
+                }]
             },
             options: {
                 scales: {
                     y: {
                         beginAtZero: true,
+                        min: 0,
+                        max: 20,
+                        ticks: { stepSize: 1 },
                         title: {
                             display: true,
                             text: 'Number of Appointments'
@@ -230,9 +231,7 @@
                     }
                 },
                 plugins: {
-                    legend: {
-                        position: 'top'
-                    },
+                    legend: { position: 'top' },
                     tooltip: {
                         callbacks: {
                             label: function(context) {

@@ -896,59 +896,53 @@ def save_availability_view(request):
         return JsonResponse({"error": str(e)}, status=400)
 
 # Add this function to fetch available slots for patients
+from datetime import datetime, date, timedelta
+
 @login_required
-def get_doctor_available_slots(request, doctor_id, date):
+def get_doctor_available_slots(request, doctor_id, date_str):
     """Get available time slots for a doctor on a specific date"""
     try:
-        # Get the day of week (0=Sunday, 6=Saturday)
-        selected_date = datetime.strptime(date, "%Y-%m-%d")
-        day_of_week = selected_date.weekday()
-        
-        # Convert Monday-based to Sunday-based (Django is Monday=0, we use Sunday=0)
-        day_of_week = 0 if day_of_week == 6 else day_of_week + 1
-        
-        # Saturday is off
+        # Parse the incoming date‐string, don't shadow date()
+        selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+
+        # Map Python Mon=0…Sun=6 → your Sun=0…Sat=6
+        python_dow = selected_date.weekday()
+        day_of_week = (python_dow + 1) % 7
+
+        # Saturday = off
         if day_of_week == 6:
             return JsonResponse({"available_slots": []})
-            
+
         doctor = CustomUser.objects.get(id=doctor_id, role="doctor")
-        availability = DoctorAvailability.objects.filter(doctor=doctor, day_of_week=day_of_week)
-        
-        # Format slots
-        slots = []
-        for slot in availability:
-            start = slot.start_time
-            end = slot.end_time
-            
-            # Create 30 min intervals
-            while start < end:
-                next_slot = (datetime.combine(datetime.today(), start) + timedelta(minutes=30)).time()
-                if next_slot <= end:
-                    slots.append({
-                        "start": start.strftime("%H:%M"),
-                        "end": next_slot.strftime("%H:%M")
-                    })
-                start = next_slot
-                
-        # Remove booked slots - ensure consistent formatting
-        booked_appointments = Appointment.objects.filter(
-            doctor=doctor, 
-            date=selected_date
+        availability = DoctorAvailability.objects.filter(
+            doctor=doctor, day_of_week=day_of_week
         )
-        
-        booked_times = []
-        for appointment in booked_appointments:
-            # Get time as "HH:MM" format to match slot["start"]
-            booked_time = appointment.time
-            if isinstance(appointment.time, str):
-                booked_times.append(appointment.time)
-            else:
-                # If it's a datetime.time object
-                booked_times.append(appointment.time.strftime("%H:%M"))
-        
-        available_slots = [slot for slot in slots if slot["start"] not in booked_times]
-        
-        return JsonResponse({"available_slots": available_slots})
+
+        # Build 30‑min slots for each availability block
+        slots = []
+        for block in availability:
+            start_dt = datetime.combine(selected_date, block.start_time)
+            end_dt   = datetime.combine(selected_date, block.end_time)
+            curr = start_dt
+            while curr + timedelta(minutes=30) <= end_dt:
+                nxt = curr + timedelta(minutes=30)
+                slots.append({
+                    "start": curr.time().strftime("%H:%M"),
+                    "end":   nxt.time().strftime("%H:%M")
+                })
+                curr = nxt
+
+        # Exclude already booked times
+        booked = Appointment.objects.filter(doctor=doctor, date=selected_date)
+        booked_ts = {
+            appt.time if isinstance(appt.time, str)
+            else appt.time.strftime("%H:%M")
+            for appt in booked
+        }
+
+        available = [s for s in slots if s["start"] not in booked_ts]
+        return JsonResponse({"available_slots": available})
+
     except CustomUser.DoesNotExist:
         return JsonResponse({"error": "Doctor not found"}, status=404)
     except Exception as e:
