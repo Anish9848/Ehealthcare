@@ -1,4 +1,4 @@
-
+<!-- filepath: c:\Users\Anish\Desktop\Final Year Project\ehealthcare\users\templates\users\register_doctor.html -->
 {% load static %}
 {% load socialaccount %}
 <!DOCTYPE html>
@@ -30,8 +30,55 @@
             background-position: center;
             background-repeat: no-repeat;
             border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             z-index: 1;
+        }
+        
+        .branding {
+            position: absolute;
+            top: 0%; /* Position above the image */
+            left: 25%; /* Match horizontal position with image */
+            transform: translateX(-50%); /* Center it horizontally */
+            z-index: 3;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(5px);
+            text-align: center;
+            min-width: 250px;
+            border-radius: 10px;
+        }
+        
+        .branding h1 {
+            color: rgb(26, 90, 0); /* Green color */
+            font-weight: bold;
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            opacity: 0; /* Start hidden */
+            transform: scale(0.95); /* Start slightly smaller */
+            animation: fadeInZoom 1.2s ease-out forwards;
+            margin-bottom: 8px;
+        }
+        
+        .branding p {
+            color: rgb(0, 115, 255); /* Blue color */
+            font-size: 1.2rem;
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+            white-space: nowrap; /* Keep text in one line */
+            overflow: hidden; /* Hide overflow */
+            width: 0; /* Start with 0 width */
+            animation: typing 2s steps(25, end) forwards 1.2s;
+            margin: 0 auto; /* Center text */
+        }
+        
+        /* Fade and zoom animation for the title */
+        @keyframes fadeInZoom {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        /* Typing animation for tagline */
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
         }
         
         .overlay {
@@ -73,24 +120,6 @@
         .register-header h2 {
             color: #228B22;
             font-weight: bold;
-        }
-        
-        .branding {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 3;
-        }
-        
-        .branding h1 {
-            color: #228B22;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-        }
-        
-        .branding p {
-            color: #444;
-            font-size: 1.2rem;
         }
         
         /* Responsive adjustments */
