@@ -12,9 +12,10 @@ class CustomUser(AbstractUser):
         ('patient', 'Patient'),
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
-    phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True)
+    phone_number = models.CharField(max_length=15, null=True, blank=True)  
     consultation_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
+    
+    
 # Function to generate file path for patient reports
 def patient_report_upload_path(instance, filename):
     # Create a folder named after the patient's username

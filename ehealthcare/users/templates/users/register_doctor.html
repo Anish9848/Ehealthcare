@@ -1,4 +1,3 @@
-<!-- filepath: c:\Users\Anish\Desktop\Final Year Project\ehealthcare\users\templates\users\register_doctor.html -->
 {% load static %}
 {% load socialaccount %}
 <!DOCTYPE html>
@@ -179,7 +178,18 @@
                 </div>
                 <div class="mb-3">
                     <label for="phone_number" class="form-label">Phone Number</label>
-                    <input type="text" class="form-control" id="phone_number" name="phone_number" placeholder="Enter your phone number" required>
+                    <div class="input-group">
+                        <select class="form-select" id="country_code" name="country_code" style="max-width: 8rem;">
+                            <option value="+977">Nepal (+977)</option>
+                            <option value="+91">India (+91)</option>
+                            <option value="+1">USA (+1)</option>
+                            <option value="+44">UK (+44)</option>
+                            <option value="+61">Australia (+61)</option>
+                            <option value="+86">China (+86)</option>
+                            <!-- Add more country codes as needed -->
+                        </select>
+                        <input type="text" class="form-control" id="phone_number" name="phone_number" placeholder="Enter your phone number" required>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
