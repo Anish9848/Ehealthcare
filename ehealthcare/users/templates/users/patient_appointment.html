@@ -147,7 +147,7 @@
                 </div>
             {% endif %}
             
-            <form method="post">
+            <form method="post" id="appointmentForm">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="doctor_id" class="form-label">Select Doctor</label>
@@ -173,60 +173,64 @@
         </div>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const doctorSelect = document.getElementById('doctor_id');
-            const dateInput = document.getElementById('date');
-            const timeSelect = document.getElementById('time');
+        // Define variables in a higher scope so they're accessible throughout the script
+        let doctorSelect, dateInput, timeSelect;
+        
+        // Function to load available slots
+        function loadAvailableSlots() {
+            const doctorId = doctorSelect.value;
+            const date = dateInput.value;
             
-            // Function to load available slots
-            function loadAvailableSlots() {
-                const doctorId = doctorSelect.value;
-                const date = dateInput.value;
-                
-                if (!doctorId || !date) {
-                    timeSelect.innerHTML = '<option value="" selected>Select a date and doctor first</option>';
-                    timeSelect.disabled = true;
-                    return;
-                }
-                
-                // Disable Saturday selection
-                const selectedDate = new Date(date);
-                if (selectedDate.getDay() === 6) { // 6 is Saturday
-                    dateInput.setCustomValidity('Doctors are not available on Saturdays');
-                    timeSelect.innerHTML = '<option value="" selected>Doctors are not available on Saturdays</option>';
-                    timeSelect.disabled = true;
-                    return;
-                } else {
-                    dateInput.setCustomValidity('');
-                }
-                
-                // Fetch available slots
-                fetch(`/api/doctor-slots/${doctorId}/${date}/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        timeSelect.innerHTML = '';
-                        
-                        if (!data.available_slots || data.available_slots.length === 0) {
-                            timeSelect.innerHTML = '<option value="" selected>No available slots for this day</option>';
-                            timeSelect.disabled = true;
-                            return;
-                        }
-                        
-                        timeSelect.disabled = false;
-                        timeSelect.innerHTML = '<option value="" selected>Select a time slot</option>';
-                        
-                        data.available_slots.forEach(slot => {
-                            const option = document.createElement('option');
-                            option.value = slot.start;
-                            option.textContent = `${slot.start} - ${slot.end}`;
-                            timeSelect.appendChild(option);
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error loading time slots:', error);
-                        timeSelect.innerHTML = '<option value="" selected>Error loading time slots</option>';
-                    });
+            if (!doctorId || !date) {
+                timeSelect.innerHTML = '<option value="" selected>Select a date and doctor first</option>';
+                timeSelect.disabled = true;
+                return;
             }
+            
+            // Disable Saturday selection
+            const selectedDate = new Date(date);
+            if (selectedDate.getDay() === 6) { // 6 is Saturday
+                dateInput.setCustomValidity('Doctors are not available on Saturdays');
+                timeSelect.innerHTML = '<option value="" selected>Doctors are not available on Saturdays</option>';
+                timeSelect.disabled = true;
+                return;
+            } else {
+                dateInput.setCustomValidity('');
+            }
+            
+            // Fetch available slots
+            fetch(`/api/doctor-slots/${doctorId}/${date}/`)
+                .then(response => response.json())
+                .then(data => {
+                    timeSelect.innerHTML = '';
+                    
+                    if (!data.available_slots || data.available_slots.length === 0) {
+                        timeSelect.innerHTML = '<option value="" selected>No available slots for this day</option>';
+                        timeSelect.disabled = true;
+                        return;
+                    }
+                    
+                    timeSelect.disabled = false;
+                    timeSelect.innerHTML = '<option value="" selected>Select a time slot</option>';
+                    
+                    data.available_slots.forEach(slot => {
+                        const option = document.createElement('option');
+                        option.value = slot.start;
+                        option.textContent = `${slot.start} - ${slot.end}`;
+                        timeSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading time slots:', error);
+                    timeSelect.innerHTML = '<option value="" selected>Error loading time slots</option>';
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the DOM elements
+            doctorSelect = document.getElementById('doctor_id');
+            dateInput = document.getElementById('date');
+            timeSelect = document.getElementById('time');
             
             // Add event listeners
             doctorSelect.addEventListener('change', loadAvailableSlots);
@@ -238,35 +242,34 @@
             const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
             dateInput.min = `${yyyy}-${mm}-${dd}`;
-        });
-
-        document.querySelector('form').addEventListener('submit', async function(e) {
-            e.preventDefault();
             
-            const doctorId = doctorSelect.value;
-            const date = dateInput.value;
-            
-            try {
-                // Check if the slot is still available right before submission
-                const response = await fetch(`/api/doctor-slots/${doctorId}/${date}/`);
-                const data = await response.json();
+            // Setup form submission handler
+            const appointmentForm = document.getElementById('appointmentForm');
+            appointmentForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
                 
-                const selectedTime = timeSelect.value;
-                const isStillAvailable = data.available_slots.some(slot => slot.start === selectedTime);
-                
-                if (!isStillAvailable) {
-                    alert('Sorry, this time slot has just been booked. Please select another time.');
-                    // Refresh the available slots
-                    loadAvailableSlots();
-                    return;
+                try {
+                    // Check if the slot is still available right before submission
+                    const response = await fetch(`/api/doctor-slots/${doctorSelect.value}/${dateInput.value}/`);
+                    const data = await response.json();
+                    
+                    const selectedTime = timeSelect.value;
+                    const isStillAvailable = data.available_slots.some(slot => slot.start === selectedTime);
+                    
+                    if (!isStillAvailable) {
+                        alert('Sorry, this time slot has just been booked. Please select another time.');
+                        // Refresh the available slots
+                        loadAvailableSlots();
+                        return;
+                    }
+                    
+                    // If the slot is still available, submit the form
+                    this.submit();
+                } catch (error) {
+                    console.error('Error checking slot availability:', error);
+                    this.submit(); // Submit anyway if the check fails
                 }
-                
-                // If the slot is still available, submit the form
-                this.submit();
-            } catch (error) {
-                console.error('Error checking slot availability:', error);
-                this.submit(); // Submit anyway if the check fails
-            }
+            });
         });
     </script>
 </body>
