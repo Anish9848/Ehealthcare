@@ -2,7 +2,9 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings
 import os
-
+from django.utils import timezone
+import random
+import hashlib
 
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
@@ -11,6 +13,7 @@ class CustomUser(AbstractUser):
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True)
+    consultation_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
 # Function to generate file path for patient reports
 def patient_report_upload_path(instance, filename):
@@ -60,3 +63,53 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"Appointment with Dr. {self.doctor.username} on {self.date} at {self.time}"
+
+class OTPVerification(models.Model):
+    phone_number = models.CharField(max_length=15)
+    otp_hash = models.CharField(max_length=64)  # Store hashed OTP
+    attempts = models.IntegerField(default=0)
+    resend_count = models.IntegerField(default=0)
+    first_sent_at = models.DateTimeField(auto_now_add=True)
+    last_sent_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_verified = models.BooleanField(default=False)
+    
+    # Store form data as JSON
+    form_data = models.TextField()
+    registration_type = models.CharField(max_length=10)  # 'patient', 'doctor', 'admin'
+    
+    def __str__(self):
+        return f"OTP for {self.phone_number}"
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+    
+    @classmethod
+    def generate_otp(cls):
+        """Generate 6-digit OTP"""
+        return str(random.randint(100000, 999999))
+    
+    @classmethod
+    def hash_otp(cls, otp, phone_number):
+        """Hash OTP with phone number as salt"""
+        key = f"{otp}:{phone_number}"
+        return hashlib.sha256(key.encode()).hexdigest()
+    
+    def verify_otp(self, entered_otp):
+        """Verify OTP and update attempts"""
+        self.attempts += 1
+        self.save()
+        
+        if self.is_expired():
+            return False, "OTP expired"
+        
+        if self.attempts > 5:
+            return False, "Too many attempts"
+        
+        hashed_input = self.hash_otp(entered_otp, self.phone_number)
+        if hashed_input == self.otp_hash:
+            self.is_verified = True
+            self.save()
+            return True, "OTP verified"
+        
+        return False, "Invalid OTP"

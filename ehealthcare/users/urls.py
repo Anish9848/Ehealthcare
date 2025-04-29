@@ -26,4 +26,6 @@ urlpatterns = [
     path("doctor/appointments/delete-meeting/<int:appointment_id>/", views.delete_meeting, name="delete_meeting"),
     path("doctor/appointments/mark-conducted/<int:appointment_id>/", views.mark_meeting_conducted, name="mark_meeting_conducted"),
     path("doctor/appointments/approve/<int:appointment_id>/", views.approve_appointment, name="approve_appointment"),
+    path('verify-otp/', views.verify_otp_view, name='verify_otp'),
+    path('resend-otp/<int:verification_id>/', views.resend_otp_view, name='resend_otp'),
 ]

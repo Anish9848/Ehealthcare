@@ -197,15 +197,65 @@ def register_doctor_view(request):
     return render(request, "users/register_doctor.html")
 
 # Register view for patient
+# Update the register_patient_view in c:\Users\Anish\Desktop\Final Year Project\ehealthcare\users\views.py
+import json
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.utils import timezone
+from datetime import timedelta
+from .models import CustomUser, OTPVerification
+from .twilio_utils import send_otp_sms
+from django.conf import settings
 
 def register_patient_view(request):
     if request.method == "POST":
+        # If this is OTP verification submission
+        if 'verification_id' in request.POST:
+            verification_id = request.POST.get('verification_id')
+            entered_otp = request.POST.get('otp')
+            
+            try:
+                verification = OTPVerification.objects.get(id=verification_id)
+            except OTPVerification.DoesNotExist:
+                messages.error(request, "Verification session expired or invalid")
+                return render(request, "users/register_patient.html")
+            
+            # Verify the OTP
+            is_valid, message = verification.verify_otp(entered_otp)
+            if not is_valid:
+                messages.error(request, message)
+                return render(request, "users/verify_otp.html", {
+                    'phone_number': verification.phone_number,
+                    'verification_id': verification.id
+                })
+                
+            # OTP is valid, register the user
+            try:
+                form_data = json.loads(verification.form_data)
+                CustomUser.objects.create_user(
+                username=form_data['username'],
+                email=form_data['email'],
+                phone_number=form_data['phone_number'],
+                password=form_data['password'],
+                role="patient",
+                consultation_fee=0  # Always include this
+                )
+                verification.delete()  # Clean up
+                messages.success(request, "Registration successful! Please log in.")
+                return redirect("login")
+            except Exception as e:
+                messages.error(request, f"Registration failed: {str(e)}")
+                return render(request, "users/register_patient.html")
+        
+        # Initial form submission
         username = request.POST.get("username")
         email = request.POST.get("email")
         phone_number = request.POST.get("phone_number")
+        country_code = request.POST.get("country_code", "+977")  # Default to Nepal if not provided
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
 
+        # Basic validations
         if password != confirm_password:
             messages.error(request, "Passwords do not match!")
             return render(request, "users/register_patient.html")
@@ -213,25 +263,58 @@ def register_patient_view(request):
         if CustomUser.objects.filter(username=username).exists():
             messages.error(request, "Username already exists!")
             return render(request, "users/register_patient.html")
-
-        if CustomUser.objects.filter(phone_number=phone_number).exists():
-            messages.error(request, "Phone number already exists!")
-            return render(request, "users/register_patient.html")
-
-        if CustomUser.objects.filter(email=email).exists():
+        
+        if email and CustomUser.objects.filter(email=email).exists():
             messages.error(request, "Email already exists!")
             return render(request, "users/register_patient.html")
 
-        # Create the patient user directly
-        CustomUser.objects.create_user(
-            username=username,
-            email=email,
-            phone_number=phone_number,
-            password=password,
-            role="patient",
+        # Format phone number with the selected country code
+        if not phone_number.startswith('+'):
+            formatted_phone = country_code + phone_number.lstrip('0')
+        else:
+            formatted_phone = phone_number
+        
+        # Country code aware phone number validation
+        # Check if this phone number exists with the same country code
+        if CustomUser.objects.filter(phone_number=formatted_phone).exists():
+            messages.error(request, f"Phone number already exists with country code {country_code}!")
+            return render(request, "users/register_patient.html")
+
+        # Store form data for OTP verification
+        form_data = {
+            'username': username,
+            'email': email,
+            'phone_number': formatted_phone,
+            'password': password
+        }
+        
+        # Generate OTP
+        otp = OTPVerification.generate_otp()
+        expires_at = timezone.now() + timedelta(minutes=settings.OTP_EXPIRY_MINUTES)
+        
+        # Create OTP verification record
+        verification = OTPVerification.objects.create(
+            phone_number=formatted_phone,
+            otp_hash=OTPVerification.hash_otp(otp, formatted_phone),
+            expires_at=expires_at,
+            form_data=json.dumps(form_data),
+            registration_type='patient'
         )
-        messages.success(request, "Patient account created successfully! Please log in.")
-        return redirect("login")
+        
+        # Send OTP via Twilio
+        success, message_id = send_otp_sms(formatted_phone, otp)
+        
+        if success:
+            # Show OTP verification page
+            return render(request, "users/verify_otp.html", {
+                'phone_number': formatted_phone,
+                'verification_id': verification.id
+            })
+        else:
+            # If OTP sending fails
+            messages.error(request, f"Failed to send verification code: {message_id}")
+            verification.delete()  # Clean up the verification entry
+            return render(request, "users/register_patient.html")
 
     return render(request, "users/register_patient.html")
 
@@ -504,3 +587,140 @@ def approve_appointment(request, appointment_id):
             return JsonResponse({"error": "This appointment is not in a pending state."}, status=400)
     except Appointment.DoesNotExist:
         return JsonResponse({"error": "Appointment not found"}, status=404)
+
+# Add this function to c:\Users\Anish\Desktop\Final Year Project\ehealthcare\users\views.py
+def resend_otp_view(request, verification_id):
+    try:
+        verification = OTPVerification.objects.get(id=verification_id)
+    except OTPVerification.DoesNotExist:
+        messages.error(request, "Invalid verification session")
+        return redirect('register_patient')
+    
+    # Check resend limits
+    if verification.resend_count >= settings.OTP_RESEND_LIMIT:
+        messages.error(request, f"Maximum resend limit reached ({settings.OTP_RESEND_LIMIT} attempts)")
+        return render(request, "users/verify_otp.html", {
+            'phone_number': verification.phone_number,
+            'verification_id': verification_id
+        })
+    
+    # Check timeframe
+    time_since_first = timezone.now() - verification.first_sent_at
+    if time_since_first > timedelta(minutes=settings.OTP_RESEND_TIMEFRAME_MINUTES):
+        # Reset if outside timeframe
+        verification.resend_count = 0
+        verification.first_sent_at = timezone.now()
+    
+    # Generate new OTP
+    new_otp = OTPVerification.generate_otp()
+    verification.otp_hash = OTPVerification.hash_otp(new_otp, verification.phone_number)
+    verification.expires_at = timezone.now() + timedelta(minutes=settings.OTP_EXPIRY_MINUTES)
+    verification.last_sent_at = timezone.now()
+    verification.resend_count += 1
+    verification.attempts = 0
+    verification.save()
+    
+    # Send new OTP
+    success, message_id = send_otp_sms(verification.phone_number, new_otp)
+    
+    if success:
+        messages.success(request, "New verification code sent!")
+    else:
+        messages.error(request, f"Failed to send verification code: {message_id}")
+    
+    return render(request, "users/verify_otp.html", {
+        'phone_number': verification.phone_number,
+        'verification_id': verification_id
+    })
+
+# Add this function to c:\Users\Anish\Desktop\Final Year Project\ehealthcare\users\views.py
+def verify_otp_view(request):
+    if request.method != "POST":
+        return redirect('login')
+        
+    verification_id = request.POST.get('verification_id')
+    entered_otp = request.POST.get('otp')
+    
+    if not verification_id or not entered_otp:
+        messages.error(request, "Invalid verification request")
+        return redirect('login')
+    
+    try:
+        verification = OTPVerification.objects.get(id=verification_id)
+    except OTPVerification.DoesNotExist:
+        messages.error(request, "Verification session expired or invalid")
+        return redirect('login')
+    
+    # Verify OTP
+    is_valid, message = verification.verify_otp(entered_otp)
+    if not is_valid:
+        messages.error(request, message)
+        return render(request, "users/verify_otp.html", {
+            'phone_number': verification.phone_number,
+            'verification_id': verification.id
+        })
+    
+    # OTP is valid, register the user based on registration type
+    try:
+        form_data = json.loads(verification.form_data)
+        
+        if verification.registration_type == 'patient':
+            CustomUser.objects.create_user(
+                username=form_data['username'],
+                email=form_data['email'],
+                phone_number=form_data['phone_number'],
+                password=form_data['password'],
+                role="patient",
+                consultation_fee=0  # Add this line
+            )
+        elif verification.registration_type == 'doctor':
+            CustomUser.objects.create_user(
+                username=form_data['username'],
+                email=form_data['email'],
+                phone_number=form_data['phone_number'],
+                password=form_data['password'],
+                role="doctor",
+                consultation_fee=0  # Add this line 
+            )
+        elif verification.registration_type == 'admin':
+            CustomUser.objects.create_user(
+                username=form_data['username'],
+                email=form_data.get('email', ''),
+                phone_number=form_data['phone_number'],
+                password=form_data['password'],
+                role="admin",
+                consultation_fee=0  # Add this line
+            )
+        
+        # Clean up
+        verification.delete()
+        
+        messages.success(request, f"{verification.registration_type.capitalize()} account created successfully! Please log in.")
+        return redirect('login')
+        
+    except Exception as e:
+        messages.error(request, f"Registration failed: {str(e)}")
+        return redirect('login')
+
+def is_phone_number_taken(formatted_phone):
+    """
+    Check if a phone number is taken, accounting for country code
+    Returns True if the phone number is already in use within the same country code
+    """
+    # Find the country code (we assume it's the first 3-6 digits after the +)
+    for i in range(1, 6):
+        prefix = formatted_phone[:i+1]  # +1, +91, +977, etc.
+        if prefix.startswith('+') and prefix[1:].isdigit():
+            # Find users with the same country code
+            users_same_country = CustomUser.objects.filter(phone_number__startswith=prefix)
+            
+            # The part after country code
+            national_part = formatted_phone[len(prefix):]
+            
+            # Check if any user has the same national number
+            for user in users_same_country:
+                existing_national_part = user.phone_number[len(prefix):]
+                if existing_national_part == national_part:
+                    return True
+    
+    return False
