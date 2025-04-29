@@ -610,16 +610,42 @@ def schedule_meeting(request):
         return JsonResponse({"error": "Unauthorized access"}, status=403)
 
     if request.method == "POST":
-        meeting_date = request.POST.get("meeting_date")
-        meeting_time = request.POST.get("meeting_time")
-        meeting_title = request.POST.get("meeting_title")
-        is_recurring = request.POST.get("is_recurring") == "true"
-
-        # Logic to save the meeting details
-        # Example: Save to the database or update an appointment
-        # You can customize this logic based on your requirements
-
-        return JsonResponse({"success": "Meeting scheduled successfully!"})
+        try:
+            patient_id = request.POST.get("patient_id")
+            meeting_date = request.POST.get("meeting_date")
+            meeting_time = request.POST.get("meeting_time")
+            meeting_title = request.POST.get("meeting_title")
+            is_recurring = request.POST.get("is_recurring") == "on"
+            
+            # Validate inputs
+            if not patient_id or not meeting_date or not meeting_time:
+                return JsonResponse({"error": "Missing required fields"}, status=400)
+                
+            # Get the patient
+            try:
+                patient = CustomUser.objects.get(id=patient_id, role="patient")
+            except CustomUser.DoesNotExist:
+                return JsonResponse({"error": "Patient not found"}, status=404)
+            
+            # Create the appointment
+            appointment = Appointment.objects.create(
+                doctor=request.user,
+                patient=patient,
+                date=meeting_date,
+                time=meeting_time,
+                title=meeting_title or f"Appointment with {patient.username}",
+                status="approved",  # Auto-approve since doctor initiated
+                is_recurring=is_recurring
+            )
+            
+            return JsonResponse({
+                "success": f"Meeting scheduled successfully with {patient.username}!",
+                "appointment_id": appointment.id
+            })
+            
+        except Exception as e:
+            return JsonResponse({"error": f"Failed to schedule meeting: {str(e)}"}, status=500)
+            
     return JsonResponse({"error": "Invalid request method"}, status=400)
 
 @login_required
@@ -630,8 +656,14 @@ def doctor_appointment_view(request):
 
     # Fetch all appointments for the logged-in doctor
     appointments = Appointment.objects.filter(doctor=request.user).order_by("date", "time")
+    
+    # Get all patients to populate the dropdown
+    patients = CustomUser.objects.filter(role="patient")
 
-    return render(request, "users/doctor_appointment.html", {"appointments": appointments})
+    return render(request, "users/doctor_appointment.html", {
+        "appointments": appointments,
+        "patients": patients
+    })
 
 @login_required
 def video_conference_view(request, room_name):

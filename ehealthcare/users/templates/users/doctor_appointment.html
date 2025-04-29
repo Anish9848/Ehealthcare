@@ -806,6 +806,16 @@
             <div class="modal-body">
                 <form id="scheduleMeetingForm">
                     <div class="mb-3">
+                        <label for="patient_id" class="form-label">Select Patient</label>
+                        <select class="form-select" id="patient_id" name="patient_id" required>
+                            <option value="" disabled selected>Select a patient</option>
+                            {% for patient in patients %}
+                                <option value="{{ patient.id }}">{{ patient.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Existing fields below -->
+                    <div class="mb-3">
                         <label for="meetingDate" class="form-label">Meeting Date</label>
                         <input type="date" class="form-control" id="meetingDate" name="meeting_date" required>
                     </div>

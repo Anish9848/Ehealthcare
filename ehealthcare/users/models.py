@@ -49,21 +49,19 @@ class DoctorReport(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
 class Appointment(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-    ]
-
-    patient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="appointments")
-    doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="appointments_as_doctor")
+    doctor = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='doctor_appointments')
+    patient = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='patient_appointments')
     date = models.DateField()
-    time = models.TimeField()
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    time = models.CharField(max_length=10)  # Store time as "HH:MM" format
+    status = models.CharField(max_length=20, default='pending')  # pending, approved, conducted, cancelled
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Appointment with Dr. {self.doctor.username} on {self.date} at {self.time}"
+    
+    # Add these new fields:
+    title = models.CharField(max_length=100, blank=True, null=True)
+    is_recurring = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-date', '-time']
 
 class OTPVerification(models.Model):
     phone_number = models.CharField(max_length=15)
