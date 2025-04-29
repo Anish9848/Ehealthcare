@@ -438,6 +438,31 @@
             font-size: 13px;
         }
         
+        .time-slots {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .time-slot-item {
+            background-color: #f8f9fa;
+            transition: background-color 0.2s;
+        }
+        
+        .time-slot-item:hover {
+            background-color: #e9ecef;
+        }
+        
+        .nav-pills .nav-link.active {
+            background-color: var(--teams-primary);
+        }
+        
+        .nav-pills .nav-link {
+            color: #333;
+        }
+        
+        .nav-pills .nav-link:hover:not(.active) {
+            background-color: #f0f0f0;
+        }
         .meetings-table td {
             padding: 8px 12px;
             border-bottom: 1px solid var(--teams-border);
@@ -618,6 +643,100 @@
             <i class="fas fa-bell"></i>
             Notifications
         </button>
+        <button class="action-button" data-bs-toggle="modal" data-bs-target="#availabilityModal">
+            <i class="fas fa-clock"></i>
+            Set Availability
+        </button>
+    </div>
+
+    <!-- Add this just before the closing </body> tag -->
+    <div class="modal fade form-modal" id="availabilityModal" tabindex="-1" aria-labelledby="availabilityModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="availabilityModalLabel">Set Your Availability</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Set your available time slots for each working day. Patients can only book appointments during these time slots.</p>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="nav flex-column nav-pills" id="dayTabs" role="tablist">
+                                <button class="nav-link active" id="sunday-tab" data-bs-toggle="pill" data-bs-target="#sunday" type="button">Sunday</button>
+                                <button class="nav-link" id="monday-tab" data-bs-toggle="pill" data-bs-target="#monday" type="button">Monday</button>
+                                <button class="nav-link" id="tuesday-tab" data-bs-toggle="pill" data-bs-target="#tuesday" type="button">Tuesday</button>
+                                <button class="nav-link" id="wednesday-tab" data-bs-toggle="pill" data-bs-target="#wednesday" type="button">Wednesday</button>
+                                <button class="nav-link" id="thursday-tab" data-bs-toggle="pill" data-bs-target="#thursday" type="button">Thursday</button>
+                                <button class="nav-link" id="friday-tab" data-bs-toggle="pill" data-bs-target="#friday" type="button">Friday</button>
+                                <button class="nav-link disabled" type="button">Saturday (Off)</button>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="tab-content" id="dayTabsContent">
+                                <!-- Sunday Tab -->
+                                <div class="tab-pane fade show active" id="sunday" role="tabpanel">
+                                    <h6 class="mb-3">Sunday Availability</h6>
+                                    <div id="sunday-slots" class="time-slots mb-3"></div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimeSlot(0)">
+                                        <i class="fas fa-plus"></i> Add Time Slot
+                                    </button>
+                                </div>
+                                
+                                <!-- Monday Tab -->
+                                <div class="tab-pane fade" id="monday" role="tabpanel">
+                                    <h6 class="mb-3">Monday Availability</h6>
+                                    <div id="monday-slots" class="time-slots mb-3"></div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimeSlot(1)">
+                                        <i class="fas fa-plus"></i> Add Time Slot
+                                    </button>
+                                </div>
+                                
+                                <!-- Tuesday Tab -->
+                                <div class="tab-pane fade" id="tuesday" role="tabpanel">
+                                    <h6 class="mb-3">Tuesday Availability</h6>
+                                    <div id="tuesday-slots" class="time-slots mb-3"></div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimeSlot(2)">
+                                        <i class="fas fa-plus"></i> Add Time Slot
+                                    </button>
+                                </div>
+                                
+                                <!-- Wednesday Tab -->
+                                <div class="tab-pane fade" id="wednesday" role="tabpanel">
+                                    <h6 class="mb-3">Wednesday Availability</h6>
+                                    <div id="wednesday-slots" class="time-slots mb-3"></div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimeSlot(3)">
+                                        <i class="fas fa-plus"></i> Add Time Slot
+                                    </button>
+                                </div>
+                                
+                                <!-- Thursday Tab -->
+                                <div class="tab-pane fade" id="thursday" role="tabpanel">
+                                    <h6 class="mb-3">Thursday Availability</h6>
+                                    <div id="thursday-slots" class="time-slots mb-3"></div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimeSlot(4)">
+                                        <i class="fas fa-plus"></i> Add Time Slot
+                                    </button>
+                                </div>
+                                
+                                <!-- Friday Tab -->
+                                <div class="tab-pane fade" id="friday" role="tabpanel">
+                                    <h6 class="mb-3">Friday Availability</h6>
+                                    <div id="friday-slots" class="time-slots mb-3"></div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimeSlot(5)">
+                                        <i class="fas fa-plus"></i> Add Time Slot
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAvailability()">Save Availability</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Calendar Grid -->
@@ -1509,6 +1628,134 @@
             alert("An error occurred. Please try again.");
         });
     }
+    // Doctor availability management
+    let doctorAvailability = {}; // Will store availability data
+
+    // Initialize time slots for each day
+    function initAvailability() {
+        // Fetch doctor's availability from the server
+        fetch('/doctor/availability/')
+            .then(response => response.json())
+            .then(data => {
+                doctorAvailability = data;
+                renderAvailabilitySlots();
+            })
+            .catch(error => {
+                console.error("Error fetching availability:", error);
+                // Initialize with empty slots if fetch fails
+                doctorAvailability = {
+                    0: [], // Sunday
+                    1: [], // Monday
+                    2: [], // Tuesday
+                    3: [], // Wednesday
+                    4: [], // Thursday
+                    5: [], // Friday
+                    // Saturday is a fixed off day
+                };
+                renderAvailabilitySlots();
+            });
+    }
+
+    // Render time slots UI
+    function renderAvailabilitySlots() {
+        const days = [0, 1, 2, 3, 4, 5]; // Sunday to Friday
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+        
+        days.forEach(day => {
+            const container = document.getElementById(`${dayNames[day]}-slots`);
+            container.innerHTML = '';
+            
+            if (!doctorAvailability[day] || doctorAvailability[day].length === 0) {
+                container.innerHTML = '<p class="text-muted">No time slots set for this day.</p>';
+                return;
+            }
+            
+            doctorAvailability[day].forEach((slot, index) => {
+                const slotDiv = document.createElement('div');
+                slotDiv.className = 'time-slot-item d-flex align-items-center mb-2 p-2 border rounded';
+                slotDiv.innerHTML = `
+                    <div class="flex-grow-1">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <label class="form-label mb-0 small">Start Time</label>
+                                <input type="time" class="form-control form-control-sm" value="${slot.start_time}" 
+                                    onchange="updateSlot(${day}, ${index}, 'start_time', this.value)">
+                            </div>
+                            <div>
+                                <label class="form-label mb-0 small">End Time</label>
+                                <input type="time" class="form-control form-control-sm" value="${slot.end_time}" 
+                                    onchange="updateSlot(${day}, ${index}, 'end_time', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger ms-2" onclick="removeTimeSlot(${day}, ${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                container.appendChild(slotDiv);
+            });
+        });
+    }
+
+    // Add a new time slot to a specific day
+    function addTimeSlot(day) {
+        if (!doctorAvailability[day]) {
+            doctorAvailability[day] = [];
+        }
+        
+        // Default new slot (9 AM - 5 PM)
+        doctorAvailability[day].push({
+            start_time: '09:00',
+            end_time: '17:00',
+        });
+        
+        renderAvailabilitySlots();
+    }
+
+    // Update a time slot
+    function updateSlot(day, index, field, value) {
+        doctorAvailability[day][index][field] = value;
+    }
+
+    // Remove a time slot
+    function removeTimeSlot(day, index) {
+        doctorAvailability[day].splice(index, 1);
+        renderAvailabilitySlots();
+    }
+
+    // Save availability to the server
+    function saveAvailability() {
+        fetch('/doctor/save-availability/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(doctorAvailability)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Availability saved successfully!');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('availabilityModal'));
+                modal.hide();
+            } else {
+                alert(data.error || 'Failed to save availability.');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving availability:', error);
+            alert('Failed to save availability. Please try again.');
+        });
+    }
+
+    // Add this line to your document ready function
+    document.addEventListener("DOMContentLoaded", function() {
+        // Keep existing code...
+        
+        // Initialize availability
+        initAvailability();
+    });
 </script>
 <!-- Meeting Details Modal -->
 <div class="modal fade" id="meetingDetailsModal" tabindex="-1" aria-labelledby="meetingDetailsModalLabel" aria-hidden="true">

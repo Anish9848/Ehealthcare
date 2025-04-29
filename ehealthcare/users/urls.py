@@ -28,4 +28,7 @@ urlpatterns = [
     path("doctor/appointments/approve/<int:appointment_id>/", views.approve_appointment, name="approve_appointment"),
     path('verify-otp/', views.verify_otp_view, name='verify_otp'),
     path('resend-otp/<int:verification_id>/', views.resend_otp_view, name='resend_otp'),
+    path('doctor/availability/', views.doctor_availability_view, name='doctor_availability'),
+    path('doctor/save-availability/', views.save_availability_view, name='save_availability'),
+    path('api/doctor-slots/<int:doctor_id>/<str:date>/', views.get_doctor_available_slots, name='doctor_slots'),
 ]

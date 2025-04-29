@@ -114,3 +114,27 @@ class OTPVerification(models.Model):
             return True, "OTP verified"
         
         return False, "Invalid OTP"
+
+# Add this after your other model definitions
+class DoctorAvailability(models.Model):
+    DAY_CHOICES = [
+        (0, 'Sunday'),
+        (1, 'Monday'),
+        (2, 'Tuesday'),
+        (3, 'Wednesday'),
+        (4, 'Thursday'),
+        (5, 'Friday'),
+        # Saturday is excluded as it's a non-working day
+    ]
+    
+    doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="availabilities")
+    day_of_week = models.IntegerField(choices=DAY_CHOICES)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    
+    class Meta:
+        unique_together = ['doctor', 'day_of_week', 'start_time']
+        ordering = ['day_of_week', 'start_time']
+    
+    def __str__(self):
+        return f"{self.get_day_of_week_display()}: {self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"

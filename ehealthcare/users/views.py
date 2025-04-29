@@ -4,11 +4,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-from .models import CustomUser, PatientReport  # Import both models
+from .models import CustomUser, PatientReport, DoctorReport, Appointment, DoctorAvailability
 from django.core.files.storage import FileSystemStorage
 from .forms import PatientReportForm
 from django.http import JsonResponse
-from .models import CustomUser, PatientReport, DoctorReport, Appointment
 
 # Login view
 def login_view(request):
@@ -541,13 +540,26 @@ def patient_appointment_view(request):
 
         try:
             doctor = CustomUser.objects.get(id=doctor_id, role="doctor")
-            Appointment.objects.create(
-                patient=request.user,
+            
+            # Check for double booking
+            existing_appointment = Appointment.objects.filter(
                 doctor=doctor,
                 date=date,
-                time=time,
-            )
-            messages.success(request, "Appointment request sent successfully!")
+                time=time
+            ).exists()
+            
+            if existing_appointment:
+                messages.error(request, "Sorry, this time slot has just been booked by another patient. Please select another time.")
+            else:
+                # Create the appointment since the slot is available
+                Appointment.objects.create(
+                    patient=request.user,
+                    doctor=doctor,
+                    date=date,
+                    time=time,
+                )
+                messages.success(request, "Appointment request sent successfully!")
+                
         except CustomUser.DoesNotExist:
             messages.error(request, "Invalid doctor selected.")
 
@@ -805,3 +817,119 @@ def is_phone_number_taken(formatted_phone):
                     return True
     
     return False
+
+# Add these two view functions after your other doctor-related views
+@login_required
+def doctor_availability_view(request):
+    """Get doctor's availability settings"""
+    if request.user.role != "doctor":
+        return JsonResponse({"error": "Unauthorized access"}, status=403)
+        
+    availability = {}
+    # Initialize all days with empty lists
+    for day in range(6):  # 0 (Sunday) to 5 (Friday)
+        availability[str(day)] = []
+        
+    # Get doctor's saved availability
+    slots = DoctorAvailability.objects.filter(doctor=request.user)
+    for slot in slots:
+        day = str(slot.day_of_week)
+        if day not in availability:
+            availability[day] = []
+            
+        availability[day].append({
+            "id": slot.id,
+            "start_time": slot.start_time.strftime("%H:%M"),
+            "end_time": slot.end_time.strftime("%H:%M")
+        })
+    
+    return JsonResponse(availability)
+
+@login_required
+def save_availability_view(request):
+    """Save doctor's availability settings"""
+    if request.user.role != "doctor":
+        return JsonResponse({"error": "Unauthorized access"}, status=403)
+    
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request method"}, status=400)
+    
+    try:
+        data = json.loads(request.body)
+        
+        # Delete existing availability
+        DoctorAvailability.objects.filter(doctor=request.user).delete()
+        
+        # Create new availability slots
+        for day, slots in data.items():
+            day = int(day)  # Convert string key to int
+            for slot in slots:
+                DoctorAvailability.objects.create(
+                    doctor=request.user,
+                    day_of_week=day,
+                    start_time=slot['start_time'],
+                    end_time=slot['end_time']
+                )
+        
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+# Add this function to fetch available slots for patients
+@login_required
+def get_doctor_available_slots(request, doctor_id, date):
+    """Get available time slots for a doctor on a specific date"""
+    try:
+        # Get the day of week (0=Sunday, 6=Saturday)
+        selected_date = datetime.strptime(date, "%Y-%m-%d")
+        day_of_week = selected_date.weekday()
+        
+        # Convert Monday-based to Sunday-based (Django is Monday=0, we use Sunday=0)
+        day_of_week = 0 if day_of_week == 6 else day_of_week + 1
+        
+        # Saturday is off
+        if day_of_week == 6:
+            return JsonResponse({"available_slots": []})
+            
+        doctor = CustomUser.objects.get(id=doctor_id, role="doctor")
+        availability = DoctorAvailability.objects.filter(doctor=doctor, day_of_week=day_of_week)
+        
+        # Format slots
+        slots = []
+        for slot in availability:
+            start = slot.start_time
+            end = slot.end_time
+            
+            # Create 30 min intervals
+            while start < end:
+                next_slot = (datetime.combine(datetime.today(), start) + timedelta(minutes=30)).time()
+                if next_slot <= end:
+                    slots.append({
+                        "start": start.strftime("%H:%M"),
+                        "end": next_slot.strftime("%H:%M")
+                    })
+                start = next_slot
+                
+        # Remove booked slots - ensure consistent formatting
+        booked_appointments = Appointment.objects.filter(
+            doctor=doctor, 
+            date=selected_date
+        )
+        
+        booked_times = []
+        for appointment in booked_appointments:
+            # Get time as "HH:MM" format to match slot["start"]
+            booked_time = appointment.time
+            if isinstance(appointment.time, str):
+                booked_times.append(appointment.time)
+            else:
+                # If it's a datetime.time object
+                booked_times.append(appointment.time.strftime("%H:%M"))
+        
+        available_slots = [slot for slot in slots if slot["start"] not in booked_times]
+        
+        return JsonResponse({"available_slots": available_slots})
+    except CustomUser.DoesNotExist:
+        return JsonResponse({"error": "Doctor not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
