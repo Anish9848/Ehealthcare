@@ -194,7 +194,8 @@ def register_doctor_view(request):
                     phone_number=form_data['phone_number'],
                     password=form_data['password'],
                     role="doctor",
-                    consultation_fee=0  # Include this for now
+                    consultation_fee=0,  # Include this for now
+                    is_verified=True
                 )
                 verification.delete()  # Clean up
                 messages.success(request, "Doctor registration successful! Please log in.")
@@ -318,7 +319,8 @@ def register_patient_view(request):
                 phone_number=form_data['phone_number'],
                 password=form_data['password'],
                 role="patient",
-                consultation_fee=0  # Always include this
+                consultation_fee=0,  # Always include this
+                is_verified=True
                 )
                 verification.delete()  # Clean up
                 messages.success(request, "Registration successful! Please log in.")
@@ -796,7 +798,8 @@ def verify_otp_view(request):
                 phone_number=form_data['phone_number'],
                 password=form_data['password'],
                 role="patient",
-                consultation_fee=0  # Add this line
+                consultation_fee=0,
+                is_verified=True  # Add this line
             )
         elif verification.registration_type == 'doctor':
             CustomUser.objects.create_user(
@@ -804,8 +807,9 @@ def verify_otp_view(request):
                 email=form_data['email'],
                 phone_number=form_data['phone_number'],
                 password=form_data['password'],
-                role="doctor",
-                consultation_fee=0  # Add this line 
+                role="doctor", 
+                consultation_fee=0,
+                is_verified=True  # Add this line
             )
         elif verification.registration_type == 'admin':
             CustomUser.objects.create_user(
@@ -814,7 +818,8 @@ def verify_otp_view(request):
                 phone_number=form_data['phone_number'],
                 password=form_data['password'],
                 role="admin",
-                consultation_fee=0  # Add this line
+                consultation_fee=0,
+                is_verified=True  # Add this line
             )
         
         # Clean up
@@ -829,26 +834,9 @@ def verify_otp_view(request):
 
 def is_phone_number_taken(formatted_phone):
     """
-    Check if a phone number is taken, accounting for country code
-    Returns True if the phone number is already in use within the same country code
+    Allow any phone number to be used multiple times, regardless of country code
     """
-    # Find the country code (we assume it's the first 3-6 digits after the +)
-    for i in range(1, 6):
-        prefix = formatted_phone[:i+1]  # +1, +91, +977, etc.
-        if prefix.startswith('+') and prefix[1:].isdigit():
-            # Find users with the same country code
-            users_same_country = CustomUser.objects.filter(phone_number__startswith=prefix)
-            
-            # The part after country code
-            national_part = formatted_phone[len(prefix):]
-            
-            # Check if any user has the same national number
-            for user in users_same_country:
-                existing_national_part = user.phone_number[len(prefix):]
-                if existing_national_part == national_part:
-                    return True
-    
-    return False
+    return False  # Always allow the phone number to be used
 
 # Add these two view functions after your other doctor-related views
 @login_required
